@@ -1,20 +1,35 @@
-# TELEC Smart Sales Manager Online
+# TELEC Smart Sales Manager Online V2
 
-Stack: GitHub + Vercel + Supabase.
+This version brings the desktop application's core features to the online system:
 
-## Setup
-1. Create a Supabase project.
-2. Run `supabase/schema.sql` in SQL Editor.
-3. Create the first user in Authentication.
-4. Run the final commented SQL statement after replacing `USER_EMAIL` to make that user Admin.
-5. Create sales users in Authentication and update their names in `profiles`.
-6. Copy `.env.example` to `.env` and add Supabase URL and anon key.
-7. Run `npm install` then `npm run dev`.
-8. Upload to GitHub and import the repository into Vercel.
-9. Add the same two environment variables in Vercel and deploy.
+- Detailed pipeline columns and automatic calculations
+- GST, WHT, Including GST, Net Total, GP and Ageing
+- Custom probability from 0 to 100
+- High / Medium / Low summaries
+- Status and user filters
+- Add, edit and delete
+- PDF and Excel export
+- Admin team reports
+- In-application user creation and activation/deactivation
+- Admin calculation settings
+- Supabase Row Level Security: sales users receive only their own records
 
-## Access
-Sales users receive only their own data. Admin receives all users' data. Supabase Row Level Security enforces this at database level.
+## Upgrade existing Supabase project
 
-## Features
-Login, admin/sales roles, add/edit/delete sales, custom probability 0-100, admin user filter, PDF export, online database.
+Run:
+
+`supabase/upgrade_v2.sql`
+
+in Supabase SQL Editor.
+
+## Required Vercel environment variables
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+The service role key is used only by the server-side `/api/create-user` function. Never expose it with a `VITE_` prefix.
+
+## Deploy update
+
+Upload all V2 files to the existing GitHub repository and commit. Vercel will redeploy automatically.
