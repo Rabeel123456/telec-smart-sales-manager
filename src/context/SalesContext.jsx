@@ -28,8 +28,6 @@ export function SalesProvider({ profile, children }) {
   async function load() {
     setLoading(true)
     try {
-      // Load profiles separately. This avoids an empty screen when the PostgREST FK
-      // relationship name differs between Supabase projects.
       const [{ data: salesRows, error: salesError }, { data: people, error: peopleError }, { data: settingRows }] = await Promise.all([
         supabase.from('sales_records').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('id,full_name,role,active').order('full_name'),

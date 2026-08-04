@@ -1,0 +1,20 @@
+TELEC SMART SALES MANAGER - LETTERHEAD PRINT UPDATE
+
+WHAT CHANGED
+- Quotation, Delivery Challan and Invoice PDFs are now blank from the branding point of view.
+- No company logo, company name, address, email, website, green bars or office footer is printed.
+- A blank area is reserved at the top for the pre-printed company letterhead.
+- Data is arranged professionally on A4 in table format.
+- Quotation and Invoice show item, quantity, rate, GST and total.
+- Delivery Challan shows item, ordered quantity, delivered quantity and remarks.
+- Existing data, users and Supabase tables remain unchanged.
+
+FILES TO REPLACE IN GITHUB
+1. src/pages/Documents.jsx
+2. src/pages/Settings.jsx
+
+NO SQL IS REQUIRED.
+NO DATA MIGRATION IS REQUIRED.
+
+DEPLOYMENT
+Upload/replace the two files above in the existing GitHub repository and commit. Vercel will deploy automatically. Once Ready, open the live website and press Ctrl + Shift + R.

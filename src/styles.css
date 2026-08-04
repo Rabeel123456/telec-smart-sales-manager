@@ -28,3 +28,6 @@
 .document-items table{min-width:1050px}.document-items textarea,.document-items input{width:100%;border:1px solid #ccd6dd;border-radius:6px;padding:8px;font:inherit}.document-items textarea{resize:vertical;min-width:320px}
 .document-total-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0}.document-total-grid>div{background:#eef6f3;border:1px solid #d9e8e2;border-radius:8px;padding:12px}.document-total-grid span{display:block;font-size:11px;color:#647482}.document-total-grid strong{display:block;margin-top:5px;font-size:15px}
 @media(max-width:900px){.document-total-grid{grid-template-columns:1fr 1fr}}
+/* Sales targets and closure */
+.target-panel{margin-bottom:15px}.muted{margin:4px 0 0;color:#71808f;font-size:12px}.target-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.target-cards>div{background:#f4f8f7;border:1px solid #dfe9e5;border-radius:9px;padding:13px}.target-cards span,.target-cards small{display:block;color:#647482;font-size:11px}.target-cards strong{display:block;font-size:17px;margin:5px 0}.target-modal{width:min(650px,95vw)}
+@media(max-width:1150px){.target-cards{grid-template-columns:repeat(2,1fr)}}

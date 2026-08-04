@@ -54,7 +54,7 @@ export default function Documents({ type }) {
     user_id:profile.role==='admin'?'':profile.id, opportunity_id:'', quotation_id:'', delivery_challan_id:'',
     document_no:nextNumber(), document_date:today(), status:'Draft', customer_name:'', contact_person:'', customer_address:'',
     subject:'', validity:settings.quotation_default_validity||'15 days from date of issue', payment_terms:settings.quotation_default_payment_terms||'',
-    items:[blankItem()], remarks:'', receiver_name:'', receiver_contact:'', vendor:'', vendor_terms:'', probability:75
+    items:[blankItem()], remarks:'', receiver_name:'', receiver_contact:'', vendor:'', vendor_terms:'', probability:75, invoice_source:'delivery'
   })
   function reset(){setForm(initialForm());setEditingId(null);setShowForm(true)}
   function edit(r){setForm({...initialForm(),...r,items:Array.isArray(r.items)&&r.items.length?r.items:[blankItem()]});setEditingId(r.id);setShowForm(true)}
@@ -77,7 +77,7 @@ export default function Documents({ type }) {
     try{
       if(!form.user_id&&profile.role==='admin')throw new Error('Please select a salesperson.')
       if(type==='delivery'&&!form.quotation_id)throw new Error('First select a Quotation.')
-      if(type==='invoice'&&!form.delivery_challan_id)throw new Error('First select a Delivery Challan.')
+      if(type==='invoice'&&form.invoice_source==='delivery'&&!form.delivery_challan_id)throw new Error('First select a Delivery Challan, or choose Direct Invoice.')
       if(!form.items.some(x=>x.description.trim()&&Number(x.qty)>0))throw new Error('Please add at least one item.')
 
       const mainItem=form.items.map(x=>x.description).filter(Boolean).join(' | ')
@@ -87,6 +87,9 @@ export default function Documents({ type }) {
         quotation_status:type==='invoice'?'Won':type==='quotation'&&form.status==='Draft'?'Pending':'Submitted', probability:type==='invoice'?100:Number(form.probability||75), remarks:form.remarks||''
       }
       let opportunityId=form.opportunity_id
+      if(type==='invoice'&&!opportunityId){
+        const {data,error}=await supabase.from('sales_records').insert({...opportunityPayload,quotation_status:'Won',probability:100,closing_date:form.document_date}).select('id').single();if(error)throw error;opportunityId=data.id
+      }
       if(type==='quotation'){
         if(opportunityId){const {error}=await supabase.from('sales_records').update(opportunityPayload).eq('id',opportunityId);if(error)throw error}
         else{const {data,error}=await supabase.from('sales_records').insert(opportunityPayload).select('id').single();if(error)throw error;opportunityId=data.id}
@@ -100,12 +103,12 @@ export default function Documents({ type }) {
         receiver_name:form.receiver_name||'', receiver_contact:form.receiver_contact||''
       }
       if(type==='delivery')payload.quotation_id=form.quotation_id
-      if(type==='invoice'){payload.quotation_id=form.quotation_id;payload.delivery_challan_id=form.delivery_challan_id}
+      if(type==='invoice'){payload.quotation_id=form.quotation_id||null;payload.delivery_challan_id=form.invoice_source==='delivery'?(form.delivery_challan_id||null):null;payload.invoice_source=form.invoice_source||'delivery'}
       const allowed = type === 'quotation'
         ? ['user_id','opportunity_id','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','subject','validity','payment_terms','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability']
         : type === 'delivery'
           ? ['user_id','opportunity_id','quotation_id','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability','receiver_name','receiver_contact']
-          : ['user_id','opportunity_id','quotation_id','delivery_challan_id','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability']
+          : ['user_id','opportunity_id','quotation_id','delivery_challan_id','invoice_source','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability']
       const clean = Object.fromEntries(Object.entries(payload).filter(([key]) => allowed.includes(key)))
       const q=editingId?supabase.from(cfg.table).update(clean).eq('id',editingId):supabase.from(cfg.table).insert(clean)
       const {error}=await q;if(error)throw error
@@ -118,43 +121,123 @@ export default function Documents({ type }) {
   async function remove(id){if(!confirm(`Delete this ${cfg.singular}?`))return;const {error}=await supabase.from(cfg.table).delete().eq('id',id);if(error)alert(error.message);else load()}
 
   function exportPdf(row){
-    const t=sumItems(row.items||[]), doc=new jsPDF({unit:'mm',format:'a4'})
-    const green=[45,128,66], name=settings.company_name||'TELEC GROUP'
-    doc.setFillColor(...green);doc.rect(0,0,210,11,'F');doc.rect(0,285,210,12,'F')
-    if(settings.company_logo_url){try{doc.addImage(settings.company_logo_url,'PNG',12,14,25,20)}catch{}}
-    doc.setTextColor(...green);doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text(name,settings.company_logo_url?43:14,24)
-    doc.setTextColor(35,35,35);doc.setFontSize(17);doc.text(cfg.singular.toUpperCase(),105,41,{align:'center'})
-    doc.setDrawColor(90);doc.line(70,43,140,43)
-    doc.setFontSize(9);doc.setFont('helvetica','normal')
-    const meta=[['Reference / No.',row.document_no],['Date',new Date(row.document_date).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})],['Prepared For',row.customer_name],['Contact Person',row.contact_person||'-']]
-    if(type==='quotation')meta.push(['Validity',row.validity||'-'])
-    autoTable(doc,{startY:49,body:meta,theme:'grid',styles:{fontSize:8,cellPadding:2},columnStyles:{0:{fontStyle:'bold',cellWidth:42},1:{cellWidth:130}}})
-    let y=doc.lastAutoTable.finalY+7
-    if(row.subject){doc.setFont('helvetica','italic');doc.text(row.subject,14,y);y+=7}
-    if(type==='quotation'&&(settings.quotation_intro_text||'')){doc.setFont('helvetica','normal');doc.text(settings.quotation_intro_text,14,y,{maxWidth:182});y+=9}
-    autoTable(doc,{startY:y,head:[['SR#','ITEM DESCRIPTION','QTY','RATE','GST %','GST AMOUNT','TOTAL AMOUNT']],body:t.items.map((x,i)=>[String(i+1).padStart(2,'0'),x.description,x.qty,pkr(x.rate),`${x.gst_rate}%`,pkr(x.gst_amount),pkr(x.total)]),theme:'grid',styles:{fontSize:7.4,cellPadding:2,valign:'middle'},headStyles:{fillColor:[225,230,225],textColor:[25,25,25]},columnStyles:{0:{cellWidth:12},1:{cellWidth:70},2:{cellWidth:12},3:{cellWidth:25},4:{cellWidth:17},5:{cellWidth:25},6:{cellWidth:27}}})
-    y=doc.lastAutoTable.finalY+4
-    autoTable(doc,{startY:y,margin:{left:120},body:[['Sub Total',pkr(t.subtotal)],['GST',pkr(t.gst)],['Grand Total',pkr(t.grand)]],theme:'grid',styles:{fontSize:8,cellPadding:2},columnStyles:{0:{fontStyle:'bold',cellWidth:35},1:{halign:'right',cellWidth:40}}})
-    y=doc.lastAutoTable.finalY+7;doc.setFontSize(8)
-    if(type==='quotation'&&row.payment_terms)doc.text(`PAYMENT TERM: ${row.payment_terms}`,14,y,{maxWidth:180})
-    if(row.remarks)doc.text(`Remarks: ${row.remarks}`,14,y+7,{maxWidth:180})
-    const footer=settings?.[cfg.footerKey];if(footer)doc.text(footer,14,271,{maxWidth:180})
-    doc.setTextColor(255,255,255);doc.setFontSize(7.5);doc.text(settings.company_email||'',14,292);doc.text(settings.company_website||'',196,292,{align:'right'})
-    doc.setTextColor(40,40,40);doc.setFontSize(7)
-    if(settings.company_footer_left)doc.text(settings.company_footer_left,14,278,{maxWidth:82})
-    if(settings.company_footer_right)doc.text(settings.company_footer_right,112,278,{maxWidth:84})
+    const t = sumItems(row.items || [])
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
+
+    // Blank space is intentionally reserved for the company's pre-printed letterhead.
+    // No logo, company name, address, email or footer branding is printed by the application.
+    const topMargin = 58
+    const sideMargin = 14
+    const bottomLimit = 268
+
+    doc.setTextColor(25, 25, 25)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(15)
+    doc.text(cfg.singular.toUpperCase(), 105, topMargin, { align: 'center' })
+    doc.setDrawColor(80)
+    doc.line(76, topMargin + 2, 134, topMargin + 2)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8.5)
+    const meta = [
+      [`${cfg.singular} No.`, row.document_no || '-'],
+      ['Date', new Date(`${row.document_date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })],
+      ['Customer / Prepared For', row.customer_name || '-'],
+      ['Contact Person', row.contact_person || '-']
+    ]
+    if (row.customer_address) meta.push(['Address', row.customer_address])
+    if (type === 'quotation') meta.push(['Validity', row.validity || '-'])
+
+    autoTable(doc, {
+      startY: topMargin + 7,
+      margin: { left: sideMargin, right: sideMargin },
+      body: meta,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 43 }, 1: { cellWidth: 139 } }
+    })
+
+    let y = doc.lastAutoTable.finalY + 6
+    if (row.subject) {
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(8.5)
+      doc.text(row.subject, sideMargin, y, { maxWidth: 182 })
+      y += 7
+    }
+
+    const head = type === 'delivery'
+      ? [['SR#', 'ITEM DESCRIPTION / SPECIFICATIONS', 'QTY', 'DELIVERED QTY', 'REMARKS']]
+      : [['SR#', 'ITEM DESCRIPTION / SPECIFICATIONS', 'QTY', 'RATE', 'GST %', 'GST AMOUNT', 'TOTAL AMOUNT']]
+
+    const body = type === 'delivery'
+      ? t.items.map((x, i) => [String(i + 1).padStart(2, '0'), x.description, x.qty, x.qty, ''])
+      : t.items.map((x, i) => [String(i + 1).padStart(2, '0'), x.description, x.qty, pkr(x.rate), `${x.gst_rate}%`, pkr(x.gst_amount), pkr(x.total)])
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: sideMargin, right: sideMargin, bottom: 28 },
+      head,
+      body,
+      theme: 'grid',
+      styles: { fontSize: 7.2, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
+      headStyles: { fillColor: [235, 239, 242], textColor: [25, 25, 25], fontStyle: 'bold' },
+      columnStyles: type === 'delivery'
+        ? { 0: { cellWidth: 12 }, 1: { cellWidth: 104 }, 2: { cellWidth: 18 }, 3: { cellWidth: 23 }, 4: { cellWidth: 25 } }
+        : { 0: { cellWidth: 11 }, 1: { cellWidth: 72 }, 2: { cellWidth: 12 }, 3: { cellWidth: 24 }, 4: { cellWidth: 16 }, 5: { cellWidth: 25 }, 6: { cellWidth: 28 } },
+      didDrawPage: data => {
+        if (data.pageNumber > 1) {
+          doc.setFontSize(7)
+          doc.text(`${cfg.singular} ${row.document_no || ''} - Continued`, sideMargin, 14)
+        }
+      }
+    })
+
+    y = doc.lastAutoTable.finalY + 4
+    if (type !== 'delivery') {
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 119, right: sideMargin },
+        body: [['Sub Total', pkr(t.subtotal)], ['GST', pkr(t.gst)], ['Grand Total', pkr(t.grand)]],
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35 }, 1: { halign: 'right', cellWidth: 42 } }
+      })
+      y = doc.lastAutoTable.finalY + 7
+    }
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    if (type === 'quotation' && row.payment_terms) {
+      doc.text(`PAYMENT TERM: ${row.payment_terms}`, sideMargin, y, { maxWidth: 182 })
+      y += 7
+    }
+    if (row.remarks) {
+      doc.text(`Remarks: ${row.remarks}`, sideMargin, y, { maxWidth: 182 })
+      y += 7
+    }
+    const footer = settings?.[cfg.footerKey]
+    if (footer && y < bottomLimit) doc.text(footer, sideMargin, y, { maxWidth: 182 })
+
+    // Delivery acknowledgement area only. It stays inside the printable data area.
+    if (type === 'delivery' && y < bottomLimit - 18) {
+      y += 10
+      doc.text('Receiver Name: ______________________________', sideMargin, y)
+      doc.text('Signature: ______________________________', 112, y)
+      doc.text('Date: __________________', sideMargin, y + 10)
+    }
+
     doc.save(`${row.document_no}.pdf`)
   }
 
   const sourceQ=profile.role==='admin'?quotations:quotations.filter(q=>q.user_id===profile.id)
   const sourceD=profile.role==='admin'?deliveries:deliveries.filter(d=>d.user_id===profile.id)
   return <div>
-    <div className="topbar"><div><h1>{cfg.title}</h1><p>{type==='quotation'?'Create professional quotations with multiple items':type==='delivery'?'Create Delivery Challan from a Quotation':'Create Invoice from a Delivery Challan'}</p></div><div className="actions"><button className="secondary" onClick={load}><RefreshCw size={16}/> Refresh</button><button className="primary" onClick={reset}><Plus size={16}/> Add {cfg.singular}</button></div></div>
+    <div className="topbar"><div><h1>{cfg.title}</h1><p>{type==='quotation'?'Create professional quotations with multiple items':type==='delivery'?'Create Delivery Challan from a Quotation':'Create Invoice from Delivery Challan or create a Direct Invoice'}</p></div><div className="actions"><button className="secondary" onClick={load}><RefreshCw size={16}/> Refresh</button><button className="primary" onClick={reset}><Plus size={16}/> Add {cfg.singular}</button></div></div>
     <section className="panel"><div className="filters"><input placeholder={`Search ${cfg.title.toLowerCase()}...`} value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="table-wrap"><table><thead><tr><th>#</th><th>No.</th><th>Date</th><th>Salesperson</th><th>Customer</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>{filtered.length?filtered.map((r,i)=><tr key={r.id}><td>{i+1}</td><td>{r.document_no}</td><td>{r.document_date}</td><td>{userName(r.user_id)}</td><td>{r.customer_name}</td><td>{pkr(r.grand_total||r.sales_value_ex_gst)}</td><td>{r.status}</td><td><button className="icon" onClick={()=>edit(r)}><Pencil size={15}/></button><button className="icon" onClick={()=>exportPdf(r)}><Download size={15}/></button><button className="icon danger" onClick={()=>remove(r.id)}><Trash2 size={15}/></button></td></tr>):<tr><td colSpan="8" className="empty">No records available.</td></tr>}</tbody></table></div></section>
     {showForm&&<div className="modal"><form className="modal-card document-pro-modal" onSubmit={save}><div className="modal-head"><h2>{editingId?'Edit':'Add'} {cfg.singular}</h2><button type="button" onClick={()=>setShowForm(false)}>×</button></div>
       <div className="form-grid">
         {type==='delivery'&&<label className="wide">Related Quotation<select required value={form.quotation_id} onChange={e=>fromQuotation(e.target.value)}><option value="">Select Quotation</option>{sourceQ.map(q=><option key={q.id} value={q.id}>{q.document_no} | {q.customer_name}</option>)}</select></label>}
-        {type==='invoice'&&<label className="wide">Related Delivery Challan<select required value={form.delivery_challan_id} onChange={e=>fromDelivery(e.target.value)}><option value="">Select Delivery Challan</option>{sourceD.map(d=><option key={d.id} value={d.id}>{d.document_no} | {d.customer_name}</option>)}</select></label>}
+        {type==='invoice'&&<><label>Invoice Source<select value={form.invoice_source||'delivery'} onChange={e=>setForm({...form,invoice_source:e.target.value,delivery_challan_id:'',quotation_id:'',opportunity_id:'',customer_name:'',contact_person:'',customer_address:'',items:[blankItem()]})}><option value="delivery">From Delivery Challan</option><option value="direct">Direct Invoice (Without DO)</option></select></label>{form.invoice_source!=='direct'?<label className="wide">Related Delivery Challan<select required value={form.delivery_challan_id} onChange={e=>fromDelivery(e.target.value)}><option value="">Select Delivery Challan</option>{sourceD.map(d=><option key={d.id} value={d.id}>{d.document_no} | {d.customer_name}</option>)}</select></label>:<label className="wide">Related Quotation (Optional)<select value={form.quotation_id||''} onChange={e=>fromQuotation(e.target.value)}><option value="">No Quotation / Manual Invoice</option>{sourceQ.map(q=><option key={q.id} value={q.id}>{q.document_no} | {q.customer_name}</option>)}</select></label>}</>}
         {profile.role==='admin'&&<label>Salesperson<select required value={form.user_id} onChange={e=>setForm({...form,user_id:e.target.value})}><option value="">Select salesperson</option>{salesUsers.map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}</select></label>}
         <label>{cfg.singular} No.<input required value={form.document_no} onChange={e=>setForm({...form,document_no:e.target.value})}/></label><label>Date<input type="date" required value={form.document_date} onChange={e=>setForm({...form,document_date:e.target.value})}/></label>
         <label>Customer / Prepared For<input required value={form.customer_name} onChange={e=>setForm({...form,customer_name:e.target.value})}/></label><label>Contact Person<input value={form.contact_person} onChange={e=>setForm({...form,contact_person:e.target.value})}/></label><label>Customer Address<input value={form.customer_address} onChange={e=>setForm({...form,customer_address:e.target.value})}/></label>
