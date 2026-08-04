@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { Download, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Download, Eye, MessageCircle, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { pkr, useSales } from '../context/SalesContext'
 
@@ -125,7 +125,7 @@ export default function Documents({ type }) {
   }
   async function remove(id){if(!confirm(`Delete this ${cfg.singular}?`))return;const {error}=await supabase.from(cfg.table).delete().eq('id',id);if(error)alert(error.message);else load()}
 
-  async function exportPdf(row){
+  async function buildPdf(row){
     const t = sumItems(row.items || [])
     const company=companyById(row.company_id)
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
@@ -242,14 +242,55 @@ export default function Documents({ type }) {
       doc.text('Date: __________________', sideMargin, y + 10)
     }
 
-    doc.save(`${row.document_no}.pdf`)
+    return doc
+  }
+
+  async function exportPdf(row){
+    try{
+      const doc=await buildPdf(row)
+      doc.save(`${row.document_no}.pdf`)
+    }catch(error){alert(error.message)}
+  }
+
+  async function viewPdf(row){
+    const previewWindow=window.open('', '_blank')
+    if(!previewWindow){alert('Please allow pop-ups to view the document.');return}
+    previewWindow.document.write('<title>Preparing document...</title><p style="font-family:Arial;padding:20px">Preparing document preview...</p>')
+    try{
+      const doc=await buildPdf(row)
+      const blob=doc.output('blob')
+      const url=URL.createObjectURL(blob)
+      previewWindow.location.href=url
+      setTimeout(()=>URL.revokeObjectURL(url),60000)
+    }catch(error){previewWindow.close();alert(error.message)}
+  }
+
+  async function shareWhatsApp(row){
+    try{
+      const doc=await buildPdf(row)
+      const blob=doc.output('blob')
+      const fileName=`${row.document_no}.pdf`
+      const file=new File([blob],fileName,{type:'application/pdf'})
+      const message=`${cfg.singular} ${row.document_no} - ${row.customer_name || ''}`
+
+      if(navigator.share && navigator.canShare?.({files:[file]})){
+        await navigator.share({title:message,text:message,files:[file]})
+        return
+      }
+
+      // Desktop browser fallback: download the PDF and open WhatsApp with a ready message.
+      doc.save(fileName)
+      window.open(`https://wa.me/?text=${encodeURIComponent(`${message}\nPDF has been downloaded. Please attach ${fileName} in WhatsApp.`)}`,'_blank','noopener,noreferrer')
+    }catch(error){
+      if(error?.name!=='AbortError')alert(error.message)
+    }
   }
 
   const sourceQ=profile.role==='admin'?quotations:quotations.filter(q=>q.user_id===profile.id)
   const sourceD=profile.role==='admin'?deliveries:deliveries.filter(d=>d.user_id===profile.id)
   return <div>
     <div className="topbar"><div><h1>{cfg.title}</h1><p>{type==='quotation'?'Create professional quotations with multiple items':type==='delivery'?'Create Delivery Challan from a Quotation':'Create Invoice from Delivery Challan or create a Direct Invoice'}</p></div><div className="actions"><button className="secondary" onClick={load}><RefreshCw size={16}/> Refresh</button><button className="primary" onClick={reset}><Plus size={16}/> Add {cfg.singular}</button></div></div>
-    <section className="panel"><div className="filters"><input placeholder={`Search ${cfg.title.toLowerCase()}...`} value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="table-wrap"><table><thead><tr><th>#</th><th>No.</th><th>Date</th><th>Company</th><th>Salesperson</th><th>Customer</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>{filtered.length?filtered.map((r,i)=><tr key={r.id}><td>{i+1}</td><td>{r.document_no}</td><td>{r.document_date}</td><td>{companyName(r.company_id)}</td><td>{userName(r.user_id)}</td><td>{r.customer_name}</td><td>{pkr(r.grand_total||r.sales_value_ex_gst)}</td><td>{r.status}</td><td><button className="icon" onClick={()=>edit(r)}><Pencil size={15}/></button><button className="icon" onClick={()=>exportPdf(r)}><Download size={15}/></button><button className="icon danger" onClick={()=>remove(r.id)}><Trash2 size={15}/></button></td></tr>):<tr><td colSpan="9" className="empty">No records available.</td></tr>}</tbody></table></div></section>
+    <section className="panel"><div className="filters"><input placeholder={`Search ${cfg.title.toLowerCase()}...`} value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="table-wrap"><table><thead><tr><th>#</th><th>No.</th><th>Date</th><th>Company</th><th>Salesperson</th><th>Customer</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>{filtered.length?filtered.map((r,i)=><tr key={r.id}><td>{i+1}</td><td>{r.document_no}</td><td>{r.document_date}</td><td>{companyName(r.company_id)}</td><td>{userName(r.user_id)}</td><td>{r.customer_name}</td><td>{pkr(r.grand_total||r.sales_value_ex_gst)}</td><td>{r.status}</td><td className="document-actions"><button className="icon" title="Edit" onClick={()=>edit(r)}><Pencil size={15}/></button><button className="icon" title="View" onClick={()=>viewPdf(r)}><Eye size={15}/></button><button className="icon" title="Download PDF" onClick={()=>exportPdf(r)}><Download size={15}/></button><button className="icon whatsapp-action" title="Share on WhatsApp" onClick={()=>shareWhatsApp(r)}><MessageCircle size={15}/></button><button className="icon danger" title="Delete" onClick={()=>remove(r.id)}><Trash2 size={15}/></button></td></tr>):<tr><td colSpan="9" className="empty">No records available.</td></tr>}</tbody></table></div></section>
     {showForm&&<div className="modal"><form className="modal-card document-pro-modal" onSubmit={save}><div className="modal-head"><h2>{editingId?'Edit':'Add'} {cfg.singular}</h2><button type="button" onClick={()=>setShowForm(false)}>×</button></div>
       <div className="form-grid">
         {type==='delivery'&&<label className="wide">Related Quotation<select required value={form.quotation_id} onChange={e=>fromQuotation(e.target.value)}><option value="">Select Quotation</option>{sourceQ.map(q=><option key={q.id} value={q.id}>{q.document_no} | {q.customer_name}</option>)}</select></label>}

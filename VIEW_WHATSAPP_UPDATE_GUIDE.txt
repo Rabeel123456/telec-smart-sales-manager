@@ -1,0 +1,25 @@
+TELEC SMART SALES MANAGER - VIEW & WHATSAPP UPDATE
+
+Added to all three modules:
+- Quotations
+- Delivery Challans
+- Invoices
+
+New actions:
+1. View: Opens the generated A4 document in a new browser tab.
+2. Download: Downloads the PDF as before.
+3. WhatsApp:
+   - On supported mobile devices/browsers, opens the system share menu with the PDF attached. Select WhatsApp.
+   - On desktop browsers, downloads the PDF and opens WhatsApp Web with a ready message. Attach the downloaded PDF in the chat.
+
+UPDATE STEPS
+1. Upload/replace these files in the existing GitHub repository:
+   src/pages/Documents.jsx
+   src/styles.css
+2. Commit message:
+   Add document view and WhatsApp sharing
+3. Wait for Vercel deployment status Ready.
+4. Open the live ERP and press Ctrl + Shift + R.
+
+No Supabase SQL is required.
+No data migration is required.

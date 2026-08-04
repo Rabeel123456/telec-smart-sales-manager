@@ -35,3 +35,7 @@
 .company-form{margin-top:22px;padding-top:18px;border-top:1px solid #e2e8ec}
 .company-form small{display:block;margin-top:6px;color:#6f7d8c;font-weight:400}
 .company-form input[type="file"]{background:#f8fafb}
+
+/* Document action buttons */
+.document-actions{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.whatsapp-action{color:#168a5b!important}
