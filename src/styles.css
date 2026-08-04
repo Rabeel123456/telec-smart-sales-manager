@@ -13,3 +13,5 @@
 @media(max-width:1100px){.dashboard-grid{grid-template-columns:1fr}.cards.six{grid-template-columns:repeat(2,1fr)}}
 .actions{flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:1350px){.topbar{align-items:flex-start}.actions{max-width:650px}}
+/* Desktop-match refinements for Team Reports */
+.team-report-panel{padding:24px}.team-report-panel h2{font-size:17px;margin:0 0 18px}.team-report-panel th,.team-report-panel td{padding:11px 10px}.desktop-report-topbar{margin-bottom:22px}.empty{text-align:center;color:#71808f;padding:24px!important}

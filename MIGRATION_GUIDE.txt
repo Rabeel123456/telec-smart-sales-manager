@@ -1,0 +1,24 @@
+TELEC SMART SALES MANAGER - DATA & USER MIGRATION
+
+This package fixes Team Reports to match the desktop page and includes automatic migration of desktop users and sales records.
+
+A. DEPLOY UI FIX
+1. Upload/replace all files in the existing GitHub repository.
+2. Commit changes.
+3. Wait for Vercel status Ready.
+4. Hard refresh with Ctrl + Shift + R.
+
+B. MIGRATE OLD DESKTOP USERS AND DATA
+1. On your Windows PC, extract this project.
+2. Copy .env.migration.example and rename the copy to .env.migration.
+3. Fill in the old Apps Script URL, old Google Sheet ID, Supabase URL and Supabase service-role key.
+4. Open CMD inside the project folder.
+5. Run: npm install
+6. Run: npm run migrate:desktop
+7. A backup is saved as migration/desktop-backup.json.
+8. Existing records are upserted, so running the migration again will not duplicate them.
+
+IMPORTANT
+- Never upload .env.migration to GitHub.
+- Never share the service-role key.
+- Sales users can only see their own records because Supabase RLS remains enabled.

@@ -1,0 +1,16 @@
+The migration script creates or reuses these accounts from the old desktop Users sheet.
+
+Admin email:
+- rabeel.ahmed@telec.com.pk
+
+Sales-user emails are generated as:
+- farheen@telec.local
+- atif@telec.local
+- saad@telec.local
+- and similarly for other usernames
+
+Temporary passwords:
+- Admin: Admin@123
+- Sales users: Sales@123
+
+Change passwords after the first login. The script also writes a complete backup to migration/desktop-backup.json.

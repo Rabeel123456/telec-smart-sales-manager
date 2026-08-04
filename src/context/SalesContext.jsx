@@ -27,20 +27,28 @@ export function SalesProvider({ profile, children }) {
 
   async function load() {
     setLoading(true)
-    const [{ data, error }, { data: settingRows }] = await Promise.all([
-      supabase.from('sales_records').select('*, profiles!sales_records_user_id_fkey(full_name)').order('created_at', { ascending: false }),
-      supabase.from('app_settings').select('gst_rate,wht_rate').eq('id', 1).single()
-    ])
-    if (error) alert(error.message)
-    setRecords(data || [])
-    if (settingRows) setSettings(settingRows)
-    if (profile.role === 'admin') {
-      const { data: people } = await supabase.from('profiles').select('id,full_name,role,active').order('full_name')
-      setUsers(people || [])
-    } else {
-      setUsers([{ id: profile.id, full_name: profile.full_name, role: profile.role, active: profile.active }])
+    try {
+      // Load profiles separately. This avoids an empty screen when the PostgREST FK
+      // relationship name differs between Supabase projects.
+      const [{ data: salesRows, error: salesError }, { data: people, error: peopleError }, { data: settingRows }] = await Promise.all([
+        supabase.from('sales_records').select('*').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('id,full_name,role,active').order('full_name'),
+        supabase.from('app_settings').select('gst_rate,wht_rate').eq('id', 1).single()
+      ])
+      if (salesError) throw salesError
+      if (peopleError) throw peopleError
+      const profileMap = Object.fromEntries((people || []).map(person => [person.id, person]))
+      setRecords((salesRows || []).map(row => ({ ...row, profiles: profileMap[row.user_id] || { full_name: 'Unknown' } })))
+      if (settingRows) setSettings(settingRows)
+      if (profile.role === 'admin') setUsers(people || [])
+      else setUsers((people || []).filter(person => person.id === profile.id))
+    } catch (error) {
+      console.error(error)
+      alert(error.message || 'Data could not be loaded.')
+      setRecords([])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   useEffect(() => { load() }, [profile.id])
@@ -55,7 +63,9 @@ export function SalesProvider({ profile, children }) {
       user_id: profile.role === 'admin' ? form.user_id : profile.id
     }
     if (!payload.user_id) throw new Error('Please select a salesperson.')
-    const query = editingId ? supabase.from('sales_records').update(payload).eq('id', editingId) : supabase.from('sales_records').insert(payload)
+    const query = editingId
+      ? supabase.from('sales_records').update(payload).eq('id', editingId)
+      : supabase.from('sales_records').insert(payload)
     const { error } = await query
     if (error) throw error
     await load()
