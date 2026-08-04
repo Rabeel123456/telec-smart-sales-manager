@@ -1,21 +1,4 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-
-export default function Settings({profile}){
-  const [form,setForm]=useState({gst_rate:18,wht_rate:5})
-  useEffect(()=>{supabase.from('app_settings').select('gst_rate,wht_rate').eq('id',1).single().then(({data})=>data&&setForm(data))},[])
-  async function save(e){
-    e.preventDefault()
-    if(profile.role!=='admin') return
-    const {error}=await supabase.from('app_settings').update({gst_rate:Number(form.gst_rate),wht_rate:Number(form.wht_rate)}).eq('id',1)
-    if(error)alert(error.message);else alert('Settings saved.')
-  }
-  return <div>
-    <div className="topbar"><div><h1>Settings</h1><p>Calculation rates used throughout the application</p></div></div>
-    <section className="panel settings-panel"><form onSubmit={save}>
-      <label>GST Rate (%)<input type="number" step="0.01" value={form.gst_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,gst_rate:e.target.value})}/></label>
-      <label>WHT Rate (%)<input type="number" step="0.01" value={form.wht_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,wht_rate:e.target.value})}/></label>
-      {profile.role==='admin'&&<button className="primary">Save Settings</button>}
-    </form></section>
-  </div>
-}
+import { useSales } from '../context/SalesContext'
+export default function Settings({profile}){const {settings,setSettings,load}=useSales();const [form,setForm]=useState(settings);useEffect(()=>setForm(settings),[settings]);async function save(e){e.preventDefault();if(profile.role!=='admin')return;const payload={gst_rate:Number(form.gst_rate),wht_rate:Number(form.wht_rate)};const {error}=await supabase.from('app_settings').update(payload).eq('id',1);if(error)alert(error.message);else{setSettings(payload);await load();alert('Settings saved.')}}return <div><div className="topbar"><div><h1>Settings</h1><p>Calculation rates used throughout the application</p></div></div><section className="panel settings-panel"><form onSubmit={save}><label>GST Rate (%)<input type="number" step="0.01" value={form.gst_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,gst_rate:e.target.value})}/></label><label>WHT Rate (%)<input type="number" step="0.01" value={form.wht_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,wht_rate:e.target.value})}/></label>{profile.role==='admin'&&<button className="primary">Save Settings</button>}</form></section></div>}
