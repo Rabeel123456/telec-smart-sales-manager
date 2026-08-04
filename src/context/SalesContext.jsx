@@ -8,7 +8,7 @@ export const pkr = n => `PKR ${Number(n || 0).toLocaleString('en-PK', { maximumF
 export function SalesProvider({ profile, children }) {
   const [records, setRecords] = useState([])
   const [users, setUsers] = useState([])
-  const [settings, setSettings] = useState({ gst_rate:18, wht_rate:5, company_name:'TELEC GROUP', company_logo_url:'', company_address:'', company_phone:'', company_email:'', quotation_prefix:'QT', delivery_prefix:'DC', invoice_prefix:'INV', quotation_footer:'', delivery_footer:'', invoice_footer:'' })
+  const [settings, setSettings] = useState({ gst_rate:18, wht_rate:5, company_name:'TELEC GROUP', company_logo_url:'', company_address:'', company_phone:'', company_email:'', quotation_prefix:'QT', delivery_prefix:'DC', invoice_prefix:'INV', quotation_footer:'', delivery_footer:'', invoice_footer:'', company_ntn:'', company_strn:'', company_website:'', company_footer_left:'', company_footer_right:'', quotation_default_validity:'15 days from date of issue', quotation_default_payment_terms:'', quotation_intro_text:'In response to your request, we are pleased to submit our quotation as below.' })
   const [loading, setLoading] = useState(true)
 
   const calc = record => {

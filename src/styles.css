@@ -22,3 +22,9 @@
 /* Professional document workflow */
 .workflow-document-modal{width:min(1120px,96vw)}
 .workflow-note{margin:14px 0 0;padding:11px 13px;border-radius:8px;background:#eef7f4;color:#245f4e;font-size:12px}
+.document-pro-modal{width:min(1280px,97vw)}
+.document-items{margin-top:18px;border:1px solid #dce5ea;border-radius:10px;padding:14px;background:#fafcfd}
+.document-items-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.document-items-head h3{margin:0}
+.document-items table{min-width:1050px}.document-items textarea,.document-items input{width:100%;border:1px solid #ccd6dd;border-radius:6px;padding:8px;font:inherit}.document-items textarea{resize:vertical;min-width:320px}
+.document-total-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0}.document-total-grid>div{background:#eef6f3;border:1px solid #d9e8e2;border-radius:8px;padding:12px}.document-total-grid span{display:block;font-size:11px;color:#647482}.document-total-grid strong{display:block;margin-top:5px;font-size:15px}
+@media(max-width:900px){.document-total-grid{grid-template-columns:1fr 1fr}}

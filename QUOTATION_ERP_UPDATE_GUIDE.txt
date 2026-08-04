@@ -1,0 +1,22 @@
+TELEC SMART SALES MANAGER - FINAL QUOTATION ERP UPDATE
+
+1) Supabase SQL Editor mein file run karein:
+   supabase/QUOTATION_ERP_FINAL.sql
+
+2) Is folder ki tamam files existing GitHub repository mein upload/replace karein.
+   Commit message: Professional quotation item workflow and PDF
+
+3) Vercel latest deployment Ready hone ke baad website par Ctrl+Shift+R press karein.
+
+WHAT IS INCLUDED
+- Multiple quotation item rows
+- Description/specifications, quantity, purchase rate, sale rate, GST rate per item
+- Automatic subtotal, GST, grand total and gross profit
+- Customer, contact, address, subject, validity and payment terms
+- Professional A4 quotation PDF inspired by the supplied quotation samples
+- Delivery Challan inherits quotation customer and items
+- Invoice inherits Delivery Challan customer and items
+- Invoice closes Sales Pipeline as Won / 100%
+- Settings for company name, logo URL, website, NTN, STRN, office footer details, intro text, validity and payment terms
+
+Existing migrated users and sales records are preserved. Do not run desktop migration again.
