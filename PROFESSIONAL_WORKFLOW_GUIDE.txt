@@ -1,0 +1,36 @@
+TELEC SMART SALES MANAGER - PROFESSIONAL DOCUMENT WORKFLOW
+
+WHAT CHANGED
+1. Quotation is now the first commercial entry.
+2. Saving a new Quotation automatically creates the related Sales Pipeline record.
+3. Delivery Challan can only be created by selecting an existing Quotation.
+4. Invoice can only be created by selecting an existing Delivery Challan.
+5. Quotation, Delivery Challan and Invoice use the same commercial fields:
+   Salesperson, Customer, Item, Purchase Value, Sales Value Excluding GST,
+   Vendor, Vendor Terms, Probability, Status and Remarks.
+6. GST, Including GST, WHT, Net Total and Gross Profit calculate automatically.
+7. Saving Invoice automatically marks the related Sales Opportunity as Won,
+   changes Probability to 100%, and saves the Closing Date.
+8. Existing Settings for company name, logo, address, phone, email, document
+   prefixes and footer text continue to work.
+
+INSTALLATION
+STEP 1: Supabase
+- Open supabase/PROFESSIONAL_DOCUMENT_WORKFLOW.sql
+- Copy all code.
+- Supabase Dashboard > SQL Editor > New Query.
+- Paste and click Run.
+- Success should appear.
+
+STEP 2: GitHub
+- Upload/replace all files from this folder in the existing repository.
+- Commit message: Professional quotation DO invoice workflow
+
+STEP 3: Vercel
+- Wait for the automatic deployment to show Ready.
+- Open the live website and press Ctrl + Shift + R.
+
+WORKFLOW
+Quotation -> Delivery Challan -> Invoice -> Pipeline Closed as Won
+
+No desktop data migration needs to be run again.

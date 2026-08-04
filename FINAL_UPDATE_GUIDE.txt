@@ -1,0 +1,28 @@
+TELEC SMART SALES MANAGER - DOCUMENTS & VISITS UPDATE
+
+Added only:
+1. Quotation linked with Sales Opportunity
+2. Delivery Challan linked with Sales Opportunity
+3. Invoice linked with Sales Opportunity
+4. Sales Visit Report with fields: Date, Person, Client, City, Mode, Location, Objective, Status, Remarks
+5. Settings for Company Name, Logo URL, Address, Phone, Email, document prefixes and footer/terms
+
+STEP 1 - SUPABASE
+Open Supabase > SQL Editor > New Query.
+Open supabase/ADD_DOCUMENTS_VISITS.sql from this package.
+Copy all code, paste in SQL Editor and click Run.
+
+STEP 2 - GITHUB
+Upload/replace all files from this package in the existing GitHub repository.
+Commit message: Add linked documents and sales visit report
+
+STEP 3 - VERCEL
+Wait for the automatic deployment to show Ready.
+Open the live website and press Ctrl + Shift + R.
+
+STEP 4 - SETTINGS
+Login as Admin > Settings.
+Enter Company Name, Logo URL, Address, Phone, Email and document prefixes/footers.
+Save Settings.
+
+No desktop data migration needs to be run again.
