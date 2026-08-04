@@ -16,7 +16,7 @@ export default function Layout({ profile, children }) {
         {profile.role === 'admin' && <Link className={active('/reports') ? 'active' : ''} to="/reports"><FileBarChart size={18}/> Team Reports</Link>}
         <Link className={active('/settings') ? 'active' : ''} to="/settings"><Settings size={18}/> Settings</Link>
       </nav>
-      <div className="sidebar-footer"><div>{profile.full_name}</div><small>{profile.role}</small><button onClick={() => supabase.auth.signOut()}><LogOut size={16}/> Logout</button><small>Online Final 1.0</small></div>
+      <div className="sidebar-footer"><div>{profile.role === 'admin' ? 'System Administrator (admin)' : profile.full_name}</div><button onClick={() => supabase.auth.signOut()}><LogOut size={16}/> Logout</button><small>Final Version 1.0</small></div>
     </aside>
     <main className="main">{children}</main>
   </div>
