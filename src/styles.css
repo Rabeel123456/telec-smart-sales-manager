@@ -31,3 +31,7 @@
 /* Sales targets and closure */
 .target-panel{margin-bottom:15px}.muted{margin:4px 0 0;color:#71808f;font-size:12px}.target-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.target-cards>div{background:#f4f8f7;border:1px solid #dfe9e5;border-radius:9px;padding:13px}.target-cards span,.target-cards small{display:block;color:#647482;font-size:11px}.target-cards strong{display:block;font-size:17px;margin:5px 0}.target-modal{width:min(650px,95vw)}
 @media(max-width:1150px){.target-cards{grid-template-columns:repeat(2,1fr)}}
+
+.company-form{margin-top:22px;padding-top:18px;border-top:1px solid #e2e8ec}
+.company-form small{display:block;margin-top:6px;color:#6f7d8c;font-weight:400}
+.company-form input[type="file"]{background:#f8fafb}

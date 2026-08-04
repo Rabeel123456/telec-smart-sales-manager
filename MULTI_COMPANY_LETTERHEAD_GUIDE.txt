@@ -1,0 +1,13 @@
+TELEC SMART SALES MANAGER - MULTI COMPANY LETTERHEAD UPDATE
+
+1. Supabase SQL Editor mein supabase/ADD_MULTI_COMPANY_LETTERHEAD.sql run karein.
+2. Is folder ki tamam files GitHub repository mein upload/replace karein.
+3. Commit karein. Vercel deployment Ready hone ka wait karein.
+4. Live ERP mein Admin/Super Admin login karein.
+5. Settings > Companies & Letterheads mein teen companies nazar aayengi.
+6. Har company ko Edit karein, scanned A4 letterhead JPG/PNG upload karein aur Save Company & Letterhead press karein.
+7. Quotation, Delivery Challan ya Invoice banate waqt Company select karein.
+8. PDF download karne par selected company ka full A4 letterhead background aur us par document data print hoga.
+
+Recommended scan: A4 portrait, 2480 x 3508 pixels, JPG or PNG, clear and straight.
+Top Blank Area field se document data ko letterhead header ke neeche move kar sakte hain.
