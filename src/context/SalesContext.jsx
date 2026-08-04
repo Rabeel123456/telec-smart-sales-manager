@@ -8,7 +8,7 @@ export const pkr = n => `PKR ${Number(n || 0).toLocaleString('en-PK', { maximumF
 export function SalesProvider({ profile, children }) {
   const [records, setRecords] = useState([])
   const [users, setUsers] = useState([])
-  const [settings, setSettings] = useState({ gst_rate: 18, wht_rate: 5 })
+  const [settings, setSettings] = useState({ gst_rate:18, wht_rate:5, company_name:'TELEC GROUP', company_logo_url:'', company_address:'', company_phone:'', company_email:'', quotation_prefix:'QT', delivery_prefix:'DC', invoice_prefix:'INV', quotation_footer:'', delivery_footer:'', invoice_footer:'' })
   const [loading, setLoading] = useState(true)
 
   const calc = record => {
@@ -33,7 +33,7 @@ export function SalesProvider({ profile, children }) {
       const [{ data: salesRows, error: salesError }, { data: people, error: peopleError }, { data: settingRows }] = await Promise.all([
         supabase.from('sales_records').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('id,full_name,role,active').order('full_name'),
-        supabase.from('app_settings').select('gst_rate,wht_rate').eq('id', 1).single()
+        supabase.from('app_settings').select('*').eq('id', 1).single()
       ])
       if (salesError) throw salesError
       if (peopleError) throw peopleError

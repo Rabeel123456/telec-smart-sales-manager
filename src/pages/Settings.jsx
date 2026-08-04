@@ -1,4 +1,25 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useSales } from '../context/SalesContext'
-export default function Settings({profile}){const {settings,setSettings,load}=useSales();const [form,setForm]=useState(settings);useEffect(()=>setForm(settings),[settings]);async function save(e){e.preventDefault();if(profile.role!=='admin')return;const payload={gst_rate:Number(form.gst_rate),wht_rate:Number(form.wht_rate)};const {error}=await supabase.from('app_settings').update(payload).eq('id',1);if(error)alert(error.message);else{setSettings(payload);await load();alert('Settings saved.')}}return <div><div className="topbar"><div><h1>Settings</h1><p>Calculation rates used throughout the application</p></div></div><section className="panel settings-panel"><form onSubmit={save}><label>GST Rate (%)<input type="number" step="0.01" value={form.gst_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,gst_rate:e.target.value})}/></label><label>WHT Rate (%)<input type="number" step="0.01" value={form.wht_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,wht_rate:e.target.value})}/></label>{profile.role==='admin'&&<button className="primary">Save Settings</button>}</form></section></div>}
+
+export default function Settings({profile}) {
+  const {settings,setSettings,load}=useSales()
+  const [form,setForm]=useState(settings)
+  useEffect(()=>setForm(settings),[settings])
+  async function save(e){e.preventDefault();if(profile.role!=='admin')return;const payload={...form,gst_rate:Number(form.gst_rate),wht_rate:Number(form.wht_rate)};const {error}=await supabase.from('app_settings').update(payload).eq('id',1);if(error)alert(error.message);else{setSettings(payload);await load();alert('Settings saved.')}}
+  return <div><div className="topbar"><div><h1>Settings</h1><p>Company and document settings</p></div></div><section className="panel settings-panel wide-settings"><form onSubmit={save}>
+    <h2>Company Details</h2>
+    <div className="settings-grid">
+      <label>Company Name<input value={form.company_name||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,company_name:e.target.value})}/></label>
+      <label>Company Logo URL<input value={form.company_logo_url||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,company_logo_url:e.target.value})}/></label>
+      <label>Company Address<input value={form.company_address||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,company_address:e.target.value})}/></label>
+      <label>Company Phone<input value={form.company_phone||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,company_phone:e.target.value})}/></label>
+      <label>Company Email<input value={form.company_email||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,company_email:e.target.value})}/></label>
+    </div>
+    <h2>Calculation Settings</h2><div className="settings-grid"><label>GST Rate (%)<input type="number" step="0.01" value={form.gst_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,gst_rate:e.target.value})}/></label><label>WHT Rate (%)<input type="number" step="0.01" value={form.wht_rate} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,wht_rate:e.target.value})}/></label></div>
+    <h2>Quotation Settings</h2><div className="settings-grid"><label>Quotation Prefix<input value={form.quotation_prefix||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,quotation_prefix:e.target.value})}/></label><label className="wide-setting">Quotation Footer / Terms<textarea rows="3" value={form.quotation_footer||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,quotation_footer:e.target.value})}/></label></div>
+    <h2>Delivery Challan Settings</h2><div className="settings-grid"><label>Delivery Challan Prefix<input value={form.delivery_prefix||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,delivery_prefix:e.target.value})}/></label><label className="wide-setting">Delivery Challan Footer / Terms<textarea rows="3" value={form.delivery_footer||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,delivery_footer:e.target.value})}/></label></div>
+    <h2>Invoice Settings</h2><div className="settings-grid"><label>Invoice Prefix<input value={form.invoice_prefix||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,invoice_prefix:e.target.value})}/></label><label className="wide-setting">Invoice Footer / Terms<textarea rows="3" value={form.invoice_footer||''} disabled={profile.role!=='admin'} onChange={e=>setForm({...form,invoice_footer:e.target.value})}/></label></div>
+    {profile.role==='admin'&&<button className="primary">Save Settings</button>}
+  </form></section></div>
+}

@@ -8,6 +8,8 @@ import Opportunity from './pages/Opportunity'
 import Users from './pages/Users'
 import TeamReports from './pages/TeamReports'
 import Settings from './pages/Settings'
+import Documents from './pages/Documents'
+import SalesVisits from './pages/SalesVisits'
 import Layout from './components/Layout'
 import { SalesProvider } from './context/SalesContext'
 
@@ -46,6 +48,10 @@ export default function App() {
     <Route path="/pipeline" element={<SalesPipeline />} />
     <Route path="/opportunity" element={<Opportunity />} />
     <Route path="/opportunity/:id" element={<Opportunity />} />
+    <Route path="/quotations" element={<Documents type="quotation" />} />
+    <Route path="/delivery-challans" element={<Documents type="delivery" />} />
+    <Route path="/invoices" element={<Documents type="invoice" />} />
+    <Route path="/sales-visits" element={<SalesVisits />} />
     <Route path="/reports" element={profile.role === 'admin' ? <TeamReports /> : <Navigate to="/" />} />
     <Route path="/users" element={profile.role === 'admin' ? <Users /> : <Navigate to="/" />} />
     <Route path="/settings" element={<Settings profile={profile} />} />
