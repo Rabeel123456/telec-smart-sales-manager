@@ -174,7 +174,9 @@ export default function Settings({profile}) {
 
     <section className="panel settings-panel wide-settings">
       <h2>Authorized Signatories & Stamps</h2>
-      <div className="note">Quotation, Delivery Challan aur Invoice par Authorized By block ke liye name, designation, signature aur stamp save karein. Multiple stamps add ki ja sakti hain.</div>
+     <div className="note">
+Manage authorized signatories for Quotations, Delivery Challans, and Invoices. Save the signatory's name, designation, signature, and company stamp. Multiple signatories can be added and managed.
+</div>
       <div className="table-wrap"><table><thead><tr><th>Name</th><th>Designation</th><th>Company</th><th>Signature</th><th>Stamp</th><th>Default</th><th>Status</th><th>Actions</th></tr></thead><tbody>{signatories.length?signatories.map(x=><tr key={x.id}><td>{x.signatory_name}</td><td>{x.designation}</td><td>{companies.find(c=>c.id===x.company_id)?.short_name||'All Companies'}</td><td>{x.signature_url?<a href={x.signature_url} target="_blank" rel="noreferrer">View</a>:'Not uploaded'}</td><td>{x.stamp_url?<a href={x.stamp_url} target="_blank" rel="noreferrer">View</a>:'Not uploaded'}</td><td>{x.is_default?'Yes':'No'}</td><td>{x.active?'Active':'Inactive'}</td><td><button className="icon" onClick={()=>editSignatory(x)}><Pencil size={15}/></button><button className="icon danger" onClick={()=>deleteSignatory(x.id)}><Trash2 size={15}/></button></td></tr>):<tr><td colSpan="8" className="empty">No authorized signatories added.</td></tr>}</tbody></table></div>
       {profile.role==='admin'&&<form onSubmit={saveSignatory} className="company-form"><div className="panel-title"><h2>{signatoryForm.id?'Edit Authorized Signatory':'Add Authorized Signatory'}</h2><button type="button" className="secondary" onClick={newSignatory}><Plus size={15}/> New</button></div><div className="settings-grid">
         <label>Company<select value={signatoryForm.company_id||''} onChange={e=>setSignatoryForm({...signatoryForm,company_id:e.target.value})}><option value="">All Companies</option>{companies.map(c=><option key={c.id} value={c.id}>{c.company_name}</option>)}</select></label>
