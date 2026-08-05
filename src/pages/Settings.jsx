@@ -3,6 +3,8 @@ import { Pencil, Plus, Trash2, Upload } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSales } from '../context/SalesContext'
 
+const blankSignatory = () => ({ id:'', company_id:'', signatory_name:'Mirza Samad Saqlain', designation:'CEO', signature_url:'', stamp_url:'', active:true, is_default:true })
+
 const blankCompany = () => ({
   id: '',
   company_name: '',
@@ -23,9 +25,14 @@ export default function Settings({profile}) {
   const [companyForm,setCompanyForm]=useState(blankCompany())
   const [letterheadFile,setLetterheadFile]=useState(null)
   const [savingCompany,setSavingCompany]=useState(false)
+  const [signatories,setSignatories]=useState([])
+  const [signatoryForm,setSignatoryForm]=useState(blankSignatory())
+  const [signatureFile,setSignatureFile]=useState(null)
+  const [stampFile,setStampFile]=useState(null)
+  const [savingSignatory,setSavingSignatory]=useState(false)
 
   useEffect(()=>setForm(settings),[settings])
-  useEffect(()=>{loadCompanies()},[])
+  useEffect(()=>{loadCompanies();loadSignatories()},[])
 
   async function loadCompanies(){
     const {data,error}=await supabase.from('companies').select('*').order('company_name')
@@ -33,6 +40,44 @@ export default function Settings({profile}) {
     else setCompanies(data||[])
   }
 
+
+  async function loadSignatories(){
+    const {data,error}=await supabase.from('authorized_signatories').select('*').order('signatory_name')
+    if(error) alert(error.message)
+    else setSignatories(data||[])
+  }
+
+  function editSignatory(row){setSignatoryForm({...blankSignatory(),...row});setSignatureFile(null);setStampFile(null)}
+  function newSignatory(){setSignatoryForm(blankSignatory());setSignatureFile(null);setStampFile(null)}
+
+  async function uploadDocumentAsset(file,folder,currentUrl=''){
+    if(!file) return currentUrl||''
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)) throw new Error('JPG, PNG ya WEBP image upload karein.')
+    const ext=(file.name.split('.').pop()||'png').toLowerCase()
+    const path=`${folder}/${Date.now()}-${crypto.randomUUID()}.${ext}`
+    const {error}=await supabase.storage.from('document-stamps').upload(path,file,{upsert:true,contentType:file.type})
+    if(error) throw error
+    return supabase.storage.from('document-stamps').getPublicUrl(path).data.publicUrl
+  }
+
+  async function saveSignatory(e){
+    e.preventDefault();if(profile.role!=='admin')return;setSavingSignatory(true)
+    try{
+      const id=signatoryForm.id||crypto.randomUUID()
+      const signature_url=await uploadDocumentAsset(signatureFile,`${id}/signature`,signatoryForm.signature_url)
+      const stamp_url=await uploadDocumentAsset(stampFile,`${id}/stamp`,signatoryForm.stamp_url)
+      const payload={id,company_id:signatoryForm.company_id||null,signatory_name:signatoryForm.signatory_name.trim(),designation:signatoryForm.designation.trim(),signature_url,stamp_url,active:Boolean(signatoryForm.active),is_default:Boolean(signatoryForm.is_default)}
+      if(payload.is_default){
+        let q=supabase.from('authorized_signatories').update({is_default:false})
+        q=payload.company_id?q.eq('company_id',payload.company_id):q.is('company_id',null)
+        await q
+      }
+      const {error}=await supabase.from('authorized_signatories').upsert(payload);if(error)throw error
+      await loadSignatories();newSignatory();alert('Authorized signatory / stamp saved.')
+    }catch(error){alert(error.message)}finally{setSavingSignatory(false)}
+  }
+
+  async function deleteSignatory(id){if(!confirm('Delete this authorized signatory?'))return;const {error}=await supabase.from('authorized_signatories').delete().eq('id',id);if(error)alert(error.message);else loadSignatories()}
   async function save(e){
     e.preventDefault()
     if(profile.role!=='admin')return
@@ -124,6 +169,22 @@ export default function Settings({profile}) {
         </div>
         <button className="primary" disabled={savingCompany}><Upload size={16}/>{savingCompany?'Uploading...':'Save Company & Letterhead'}</button>
       </form>}
+    </section>
+
+
+    <section className="panel settings-panel wide-settings">
+      <h2>Authorized Signatories & Stamps</h2>
+      <div className="note">Quotation, Delivery Challan aur Invoice par Authorized By block ke liye name, designation, signature aur stamp save karein. Multiple stamps add ki ja sakti hain.</div>
+      <div className="table-wrap"><table><thead><tr><th>Name</th><th>Designation</th><th>Company</th><th>Signature</th><th>Stamp</th><th>Default</th><th>Status</th><th>Actions</th></tr></thead><tbody>{signatories.length?signatories.map(x=><tr key={x.id}><td>{x.signatory_name}</td><td>{x.designation}</td><td>{companies.find(c=>c.id===x.company_id)?.short_name||'All Companies'}</td><td>{x.signature_url?<a href={x.signature_url} target="_blank" rel="noreferrer">View</a>:'Not uploaded'}</td><td>{x.stamp_url?<a href={x.stamp_url} target="_blank" rel="noreferrer">View</a>:'Not uploaded'}</td><td>{x.is_default?'Yes':'No'}</td><td>{x.active?'Active':'Inactive'}</td><td><button className="icon" onClick={()=>editSignatory(x)}><Pencil size={15}/></button><button className="icon danger" onClick={()=>deleteSignatory(x.id)}><Trash2 size={15}/></button></td></tr>):<tr><td colSpan="8" className="empty">No authorized signatories added.</td></tr>}</tbody></table></div>
+      {profile.role==='admin'&&<form onSubmit={saveSignatory} className="company-form"><div className="panel-title"><h2>{signatoryForm.id?'Edit Authorized Signatory':'Add Authorized Signatory'}</h2><button type="button" className="secondary" onClick={newSignatory}><Plus size={15}/> New</button></div><div className="settings-grid">
+        <label>Company<select value={signatoryForm.company_id||''} onChange={e=>setSignatoryForm({...signatoryForm,company_id:e.target.value})}><option value="">All Companies</option>{companies.map(c=><option key={c.id} value={c.id}>{c.company_name}</option>)}</select></label>
+        <label>Authorized Person<input required value={signatoryForm.signatory_name} onChange={e=>setSignatoryForm({...signatoryForm,signatory_name:e.target.value})}/></label>
+        <label>Designation<input required value={signatoryForm.designation} onChange={e=>setSignatoryForm({...signatoryForm,designation:e.target.value})}/></label>
+        <label>Default<select value={String(signatoryForm.is_default)} onChange={e=>setSignatoryForm({...signatoryForm,is_default:e.target.value==='true'})}><option value="true">Yes</option><option value="false">No</option></select></label>
+        <label>Active<select value={String(signatoryForm.active)} onChange={e=>setSignatoryForm({...signatoryForm,active:e.target.value==='true'})}><option value="true">Active</option><option value="false">Inactive</option></select></label>
+        <label className="wide-setting">Upload Signature Image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setSignatureFile(e.target.files?.[0]||null)}/></label>
+        <label className="wide-setting">Upload Authorized Stamp Image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setStampFile(e.target.files?.[0]||null)}/></label>
+      </div><button className="primary" disabled={savingSignatory}><Upload size={16}/>{savingSignatory?'Uploading...':'Save Authorized Signatory & Stamp'}</button></form>}
     </section>
 
     <section className="panel settings-panel wide-settings"><form onSubmit={save}>
