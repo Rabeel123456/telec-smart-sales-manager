@@ -32,7 +32,7 @@ const sumItems = items => {
 export default function Documents({ type }) {
   const cfg = CONFIG[type]
   const { profile, records, users, settings, load: reloadSales } = useSales()
-  const [rows,setRows]=useState([]), [quotations,setQuotations]=useState([]), [deliveries,setDeliveries]=useState([]), [companies,setCompanies]=useState([])
+  const [rows,setRows]=useState([]), [quotations,setQuotations]=useState([]), [deliveries,setDeliveries]=useState([]), [companies,setCompanies]=useState([]), [signatories,setSignatories]=useState([])
   const [search,setSearch]=useState(''), [showForm,setShowForm]=useState(false), [editingId,setEditingId]=useState(null)
   const [form,setForm]=useState({})
   const salesUsers=users.filter(u=>u.role==='sales'&&u.active)
@@ -41,13 +41,14 @@ export default function Documents({ type }) {
   const companyById=id=>companies.find(c=>c.id===id)
 
   async function load(){
-    const [{data,error},{data:qs},{data:ds},{data:cs}]=await Promise.all([
+    const [{data,error},{data:qs},{data:ds},{data:cs},{data:ss}]=await Promise.all([
       supabase.from(cfg.table).select('*').order('created_at',{ascending:false}),
       supabase.from('quotations').select('*').order('created_at',{ascending:false}),
       supabase.from('delivery_challans').select('*').order('created_at',{ascending:false}),
-      supabase.from('companies').select('*').eq('active',true).order('company_name')
+      supabase.from('companies').select('*').eq('active',true).order('company_name'),
+      supabase.from('authorized_signatories').select('*').eq('active',true).order('signatory_name')
     ])
-    if(error)return alert(error.message);setRows(data||[]);setQuotations(qs||[]);setDeliveries(ds||[]);setCompanies(cs||[])
+    if(error)return alert(error.message);setRows(data||[]);setQuotations(qs||[]);setDeliveries(ds||[]);setCompanies(cs||[]);setSignatories(ss||[])
   }
   useEffect(()=>{load();setShowForm(false);setEditingId(null)},[type])
 
@@ -58,7 +59,7 @@ export default function Documents({ type }) {
     user_id:profile.role==='admin'?'':profile.id, company_id:companies[0]?.id||'', opportunity_id:'', quotation_id:'', delivery_challan_id:'',
     document_no:nextNumber(companies[0]?.id||''), document_date:today(), status:'Draft', customer_name:'', contact_person:'', customer_address:'',
     subject:'', validity:settings.quotation_default_validity||'15 days from date of issue', payment_terms:settings.quotation_default_payment_terms||'',
-    items:[blankItem()], remarks:'', receiver_name:'', receiver_contact:'', vendor:'', vendor_terms:'', probability:75, invoice_source:'delivery'
+    items:[blankItem()], remarks:'', authorized_signatory_id:'', receiver_name:'', receiver_designation:'', received_date:today(), receiver_contact:'', vendor:'', vendor_terms:'', probability:75, invoice_source:'delivery'
   })
   function reset(){setForm(initialForm());setEditingId(null);setShowForm(true)}
   function edit(r){setForm({...initialForm(),...r,items:Array.isArray(r.items)&&r.items.length?r.items:[blankItem()]});setEditingId(r.id);setShowForm(true)}
@@ -105,15 +106,15 @@ export default function Documents({ type }) {
         subject:form.subject||'', validity:form.validity||'', payment_terms:form.payment_terms||'', items:totals.items,
         subtotal:totals.subtotal, gst_amount:totals.gst, grand_total:totals.grand, item:mainItem, purchase_value:totals.purchase,
         sales_value_ex_gst:totals.subtotal, vendor:form.vendor||'', vendor_terms:form.vendor_terms||'', probability:type==='invoice'?100:Number(form.probability||75),
-        receiver_name:form.receiver_name||'', receiver_contact:form.receiver_contact||''
+        authorized_signatory_id:form.authorized_signatory_id||null, receiver_name:form.receiver_name||'', receiver_designation:form.receiver_designation||'', received_date:form.received_date||null, receiver_contact:form.receiver_contact||''
       }
       if(type==='delivery')payload.quotation_id=form.quotation_id
       if(type==='invoice'){payload.quotation_id=form.quotation_id||null;payload.delivery_challan_id=form.invoice_source==='delivery'?(form.delivery_challan_id||null):null;payload.invoice_source=form.invoice_source||'delivery'}
       const allowed = type === 'quotation'
-        ? ['company_id','user_id','opportunity_id','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','subject','validity','payment_terms','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability']
+        ? ['company_id','user_id','opportunity_id','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','subject','validity','payment_terms','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability','authorized_signatory_id','receiver_name','receiver_designation','received_date']
         : type === 'delivery'
-          ? ['company_id','user_id','opportunity_id','quotation_id','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability','receiver_name','receiver_contact']
-          : ['company_id','user_id','opportunity_id','quotation_id','delivery_challan_id','invoice_source','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability']
+          ? ['company_id','user_id','opportunity_id','quotation_id','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability','authorized_signatory_id','receiver_name','receiver_designation','received_date','receiver_contact']
+          : ['company_id','user_id','opportunity_id','quotation_id','delivery_challan_id','invoice_source','document_no','document_date','status','remarks','customer_name','contact_person','customer_address','items','subtotal','gst_amount','grand_total','item','purchase_value','sales_value_ex_gst','vendor','vendor_terms','probability','authorized_signatory_id','receiver_name','receiver_designation','received_date']
       const clean = Object.fromEntries(Object.entries(payload).filter(([key]) => allowed.includes(key)))
       const q=editingId?supabase.from(cfg.table).update(clean).eq('id',editingId):supabase.from(cfg.table).insert(clean)
       const {error}=await q;if(error)throw error
@@ -128,6 +129,7 @@ export default function Documents({ type }) {
   async function buildPdf(row){
     const t = sumItems(row.items || [])
     const company=companyById(row.company_id)
+    const signatory=signatories.find(x=>x.id===row.authorized_signatory_id) || signatories.find(x=>x.company_id===row.company_id && x.is_default) || signatories.find(x=>!x.company_id && x.is_default) || signatories[0]
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
 
     const imageToDataUrl=async url=>{
@@ -137,8 +139,10 @@ export default function Documents({ type }) {
       const blob=await response.blob()
       return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)})
     }
-    let letterheadData=null
+    let letterheadData=null, signatureData=null, stampData=null
     try{letterheadData=await imageToDataUrl(company?.letterhead_url)}catch(error){alert(error.message)}
+    try{signatureData=await imageToDataUrl(signatory?.signature_url)}catch(error){console.warn(error)}
+    try{stampData=await imageToDataUrl(signatory?.stamp_url)}catch(error){console.warn(error)}
     const drawLetterhead=()=>{if(letterheadData){const fmt=letterheadData.startsWith('data:image/png')?'PNG':letterheadData.startsWith('data:image/webp')?'WEBP':'JPEG';doc.addImage(letterheadData,fmt,0,0,210,297)}}
     drawLetterhead()
     const topMargin = Number(company?.top_margin_mm||55)
@@ -232,15 +236,48 @@ export default function Documents({ type }) {
       y += 7
     }
     const footer = settings?.[cfg.footerKey]
-    if (footer && y < bottomLimit) doc.text(footer, sideMargin, y, { maxWidth: 182 })
+    if (footer && y < bottomLimit) { doc.text(footer, sideMargin, y, { maxWidth: 182 }); y += 9 }
 
-    // Delivery acknowledgement area only. It stays inside the printable data area.
-    if (type === 'delivery' && y < bottomLimit - 18) {
-      y += 10
-      doc.text('Receiver Name: ______________________________', sideMargin, y)
-      doc.text('Signature: ______________________________', 112, y)
-      doc.text('Date: __________________', sideMargin, y + 10)
+    // Authorization and customer acknowledgement block for all documents.
+    const requiredHeight = 58
+    if (y > bottomLimit - requiredHeight) {
+      doc.addPage()
+      drawLetterhead()
+      y = Number(company?.top_margin_mm||55)
+    } else {
+      y += 5
     }
+
+    doc.setDrawColor(155)
+    doc.setLineWidth(0.25)
+    doc.line(sideMargin, y, 196, y)
+    y += 6
+    doc.setFont('helvetica','bold')
+    doc.setFontSize(8.5)
+    doc.text('AUTHORIZED BY', sideMargin, y)
+    doc.text('RECEIVED BY', 112, y)
+    doc.setFont('helvetica','normal')
+    doc.setFontSize(8)
+
+    const authName = signatory?.signatory_name || 'Mirza Samad Saqlain'
+    const authDesignation = signatory?.designation || 'CEO'
+    doc.text(`Name: ${authName}`, sideMargin, y + 7)
+    doc.text(`Designation: ${authDesignation}`, sideMargin, y + 13)
+    if (signatureData) {
+      const fmt=signatureData.startsWith('data:image/png')?'PNG':signatureData.startsWith('data:image/webp')?'WEBP':'JPEG'
+      doc.addImage(signatureData,fmt,sideMargin,y+16,38,12,undefined,'FAST')
+    } else doc.text('Signature: ______________________', sideMargin, y + 23)
+    if (stampData) {
+      const fmt=stampData.startsWith('data:image/png')?'PNG':stampData.startsWith('data:image/webp')?'WEBP':'JPEG'
+      doc.addImage(stampData,fmt,58,y+15,32,20,undefined,'FAST')
+    } else doc.text('Authorized Stamp', 58, y + 23)
+
+    doc.text(`Customer Name: ${row.receiver_name || row.customer_name || '____________________'}`, 112, y + 7)
+    doc.text(`Designation: ${row.receiver_designation || '____________________'}`, 112, y + 13)
+    doc.text('Signature: __________________________', 112, y + 20)
+    doc.text('Company Stamp:', 112, y + 27)
+    doc.rect(145, y + 23, 38, 16)
+    doc.text(`Date: ${row.received_date ? new Date(`${row.received_date}T00:00:00`).toLocaleDateString('en-GB') : '____ / ____ / ______'}`, 112, y + 46)
 
     return doc
   }
@@ -300,7 +337,11 @@ export default function Documents({ type }) {
         <label>{cfg.singular} No.<input required value={form.document_no} onChange={e=>setForm({...form,document_no:e.target.value})}/></label><label>Date<input type="date" required value={form.document_date} onChange={e=>setForm({...form,document_date:e.target.value})}/></label>
         <label>Customer / Prepared For<input required value={form.customer_name} onChange={e=>setForm({...form,customer_name:e.target.value})}/></label><label>Contact Person<input value={form.contact_person} onChange={e=>setForm({...form,contact_person:e.target.value})}/></label><label>Customer Address<input value={form.customer_address} onChange={e=>setForm({...form,customer_address:e.target.value})}/></label>
         {type==='quotation'&&<><label className="wide">Subject / Configuration Title<input value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})}/></label><label>Validity<input value={form.validity} onChange={e=>setForm({...form,validity:e.target.value})}/></label><label>Payment Terms<input value={form.payment_terms} onChange={e=>setForm({...form,payment_terms:e.target.value})}/></label></>}
-        {type==='delivery'&&<><label>Receiver Name<input value={form.receiver_name} onChange={e=>setForm({...form,receiver_name:e.target.value})}/></label><label>Receiver Contact<input value={form.receiver_contact} onChange={e=>setForm({...form,receiver_contact:e.target.value})}/></label></>}
+        {type==='delivery'&&<label>Receiver Contact<input value={form.receiver_contact} onChange={e=>setForm({...form,receiver_contact:e.target.value})}/></label>}
+        <label>Authorized By<select value={form.authorized_signatory_id||''} onChange={e=>setForm({...form,authorized_signatory_id:e.target.value})}><option value="">Default: Mirza Samad Saqlain - CEO</option>{signatories.filter(x=>!x.company_id||x.company_id===form.company_id).map(x=><option key={x.id} value={x.id}>{x.signatory_name} - {x.designation}</option>)}</select></label>
+        <label>Received By / Customer Name<input value={form.receiver_name||''} onChange={e=>setForm({...form,receiver_name:e.target.value})}/></label>
+        <label>Received By Designation<input value={form.receiver_designation||''} onChange={e=>setForm({...form,receiver_designation:e.target.value})}/></label>
+        <label>Received Date<input type="date" value={form.received_date||''} onChange={e=>setForm({...form,received_date:e.target.value})}/></label>
       </div>
       <div className="document-items"><div className="document-items-head"><h3>Items</h3><button type="button" className="secondary" onClick={addItem}>+ Add Item</button></div><div className="table-wrap"><table><thead><tr><th>SR</th><th>Description / Specifications</th><th>Qty</th><th>Purchase Rate</th><th>Sale Rate</th><th>GST %</th><th>Total</th><th></th></tr></thead><tbody>{(form.items||[]).map((x,i)=>{const line=sumItems([x]).items[0];return <tr key={i}><td>{i+1}</td><td><textarea rows="3" required value={x.description} onChange={e=>setItem(i,'description',e.target.value)}/></td><td><input type="number" min="0.01" step="0.01" value={x.qty} onChange={e=>setItem(i,'qty',e.target.value)}/></td><td><input type="number" min="0" step="0.01" value={x.purchase_rate} onChange={e=>setItem(i,'purchase_rate',e.target.value)}/></td><td><input type="number" min="0" step="0.01" value={x.rate} onChange={e=>setItem(i,'rate',e.target.value)}/></td><td><input type="number" min="0" step="0.01" value={x.gst_rate} onChange={e=>setItem(i,'gst_rate',e.target.value)}/></td><td>{pkr(line.total)}</td><td><button type="button" className="icon danger" onClick={()=>removeItem(i)}>×</button></td></tr>})}</tbody></table></div></div>
       <div className="document-total-grid"><div><span>Sub Total</span><strong>{pkr(totals.subtotal)}</strong></div><div><span>GST</span><strong>{pkr(totals.gst)}</strong></div><div><span>Grand Total</span><strong>{pkr(totals.grand)}</strong></div><div><span>Gross Profit</span><strong>{pkr(totals.subtotal-totals.purchase)}</strong></div></div>
