@@ -150,7 +150,7 @@ export default function Settings({profile}) {
 
     <section className="panel settings-panel wide-settings">
       <h2>Companies & Letterheads</h2>
-      <div className="note">Scanned A4 letterhead JPG/PNG upload karein. Quotation, Delivery Challan aur Invoice banate waqt company select hogi aur selected letterhead PDF ke background par print hoga.</div>
+      <div className="note">Upload a scanned A4 letterhead (JPG, PNG or WEBP) for each company. The selected company’s letterhead will automatically be applied as the background when printing or generating PDF Quotations, Delivery Challans, and Invoices.</div>
       <div className="table-wrap"><table><thead><tr><th>Company</th><th>Short Name</th><th>Letterhead</th><th>Quotation Prefix</th><th>DO Prefix</th><th>Invoice Prefix</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>{companies.length?companies.map(c=><tr key={c.id}><td>{c.company_name}</td><td>{c.short_name}</td><td>{c.letterhead_url?<a href={c.letterhead_url} target="_blank" rel="noreferrer">View</a>:'Not uploaded'}</td><td>{c.quotation_prefix}</td><td>{c.delivery_prefix}</td><td>{c.invoice_prefix}</td><td>{c.active?'Active':'Inactive'}</td><td><button className="icon" onClick={()=>editCompany(c)}><Pencil size={15}/></button><button className="icon danger" onClick={()=>deleteCompany(c.id)}><Trash2 size={15}/></button></td></tr>):<tr><td colSpan="8" className="empty">No companies added.</td></tr>}</tbody></table></div>
 
