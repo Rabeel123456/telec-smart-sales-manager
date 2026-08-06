@@ -7,7 +7,13 @@ export default function Layout({ profile, children }) {
   const active = path => location.pathname === path || (path !== '/' && location.pathname.startsWith(path))
   return <div className="app-shell">
     <aside className="sidebar">
-      <div className="brand"><div className="brand-logo">T</div><div><strong>TELEC</strong><span>Smart Sales Manager</span></div></div>
+      <div className="brand"><div className="brand-logo">
+  <img
+    src="/telec-logo.png"
+    alt="TELEC"
+    className="telec-sidebar-logo"
+  />
+</div><div><strong>TELEC</strong><span>Smart Sales Manager</span></div></div>
       <nav>
         <Link className={active('/') ? 'active' : ''} to="/"><BarChart3 size={18}/> Dashboard</Link>
         <Link className={active('/pipeline') ? 'active' : ''} to="/pipeline"><List size={18}/> Sales Pipeline</Link>
