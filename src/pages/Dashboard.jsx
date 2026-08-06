@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Download, FileSpreadsheet, Maximize, Plus, RefreshCw, Target } from 'lucide-react'
+import { Download, Eye, FileSpreadsheet, Maximize, Plus, RefreshCw, Search, Target, X } from 'lucide-react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { supabase } from '../lib/supabase'
 import { pkr, useSales } from '../context/SalesContext'
+import '../dashboard-details.css'
 
 const now = new Date()
 const CURRENT_YEAR = now.getFullYear()
@@ -18,6 +19,8 @@ export default function Dashboard() {
   const [deliveries, setDeliveries] = useState([])
   const [target, setTarget] = useState({ monthly_target: 0, yearly_target: 0 })
   const [showTarget, setShowTarget] = useState(false)
+  const [detailType, setDetailType] = useState(null)
+  const [detailSearch, setDetailSearch] = useState('')
   const selectedUserId = profile.role === 'admin' ? (person || '') : profile.id
 
   const rows = useMemo(
@@ -60,6 +63,72 @@ export default function Dashboard() {
   const monthlyRemaining = Math.max(Number(target.monthly_target||0)-monthlyAchieved,0)
   const monthlyPercent = Number(target.monthly_target||0)>0 ? monthlyAchieved/Number(target.monthly_target)*100 : 0
 
+
+  const pendingRows = rows.filter(r => ['Pending', 'Submitted'].includes(r.quotation_status))
+
+  const detailConfig = {
+    pipeline: {
+      title: 'Total Pipeline Details',
+      subtitle: 'Complete breakdown of the selected sales pipeline.',
+      rows,
+      value: sum('sales_value_ex_gst')
+    },
+    gp: {
+      title: 'Gross Profit Details',
+      subtitle: 'Opportunity-wise gross profit contribution.',
+      rows: [...rows].sort((a,b) => Number(b.gp||0) - Number(a.gp||0)),
+      value: sum('gp')
+    },
+    high: {
+      title: '67–100% Probability Details',
+      subtitle: 'High-probability sales opportunities.',
+      rows: rows.filter(r => Number(r.probability) >= 67 && Number(r.probability) <= 100),
+      value: band(67,100)
+    },
+    medium: {
+      title: '34–66% Probability Details',
+      subtitle: 'Medium-probability sales opportunities.',
+      rows: rows.filter(r => Number(r.probability) >= 34 && Number(r.probability) <= 66),
+      value: band(34,66)
+    },
+    low: {
+      title: '0–33% Probability Details',
+      subtitle: 'Early-stage and low-probability sales opportunities.',
+      rows: rows.filter(r => Number(r.probability) >= 0 && Number(r.probability) <= 33),
+      value: band(0,33)
+    },
+    pending: {
+      title: 'Pending Quotation Details',
+      subtitle: 'Quotations currently pending or submitted.',
+      rows: pendingRows,
+      value: pendingRows.length
+    }
+  }
+
+  const activeDetail = detailType ? detailConfig[detailType] : null
+  const visibleDetailRows = activeDetail
+    ? activeDetail.rows.filter(r => {
+        const text = [
+          r.profiles?.full_name,
+          r.customer_name,
+          r.item,
+          r.quotation_status,
+          r.quotation_date
+        ].join(' ').toLowerCase()
+        return text.includes(detailSearch.toLowerCase())
+      })
+    : []
+
+  function openDetails(type) {
+    setDetailSearch('')
+    setDetailType(type)
+  }
+
+  function closeDetails() {
+    setDetailType(null)
+    setDetailSearch('')
+  }
+
   async function saveTarget(e) {
     e.preventDefault()
     const userId = selectedUserId || profile.id
@@ -97,7 +166,26 @@ export default function Dashboard() {
 
     {profile.role==='admin'&&<div className="scope"><label>View salesperson<select value={person} onChange={e=>setPerson(e.target.value)}><option value="">All Salespersons</option>{users.filter(u=>u.role==='sales'&&u.active).map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}</select></label></div>}
 
-    <div className="cards six"><div className="card"><span>Total Pipeline</span><strong>{pkr(sum('sales_value_ex_gst'))}</strong></div><div className="card"><span>Total Gross Profit</span><strong>{pkr(sum('gp'))}</strong></div><div className="card"><span>75% Probability</span><strong>{pkr(band(67,100))}</strong></div><div className="card"><span>50% Probability</span><strong>{pkr(band(34,66))}</strong></div><div className="card"><span>25% Probability</span><strong>{pkr(band(0,33))}</strong></div><div className="card"><span>Pending Quotations</span><strong>{rows.filter(r=>['Pending','Submitted'].includes(r.quotation_status)).length}</strong></div></div>
+    <div className="cards six dashboard-clickable-cards">
+      <button className="card dashboard-stat-card" onClick={()=>openDetails('pipeline')}>
+        <span>Total Pipeline</span><strong>{pkr(sum('sales_value_ex_gst'))}</strong><small><Eye size={14}/> View details</small>
+      </button>
+      <button className="card dashboard-stat-card" onClick={()=>openDetails('gp')}>
+        <span>Total Gross Profit</span><strong>{pkr(sum('gp'))}</strong><small><Eye size={14}/> View details</small>
+      </button>
+      <button className="card dashboard-stat-card" onClick={()=>openDetails('high')}>
+        <span>75% Probability</span><strong>{pkr(band(67,100))}</strong><small><Eye size={14}/> View details</small>
+      </button>
+      <button className="card dashboard-stat-card" onClick={()=>openDetails('medium')}>
+        <span>50% Probability</span><strong>{pkr(band(34,66))}</strong><small><Eye size={14}/> View details</small>
+      </button>
+      <button className="card dashboard-stat-card" onClick={()=>openDetails('low')}>
+        <span>25% Probability</span><strong>{pkr(band(0,33))}</strong><small><Eye size={14}/> View details</small>
+      </button>
+      <button className="card dashboard-stat-card" onClick={()=>openDetails('pending')}>
+        <span>Pending Quotations</span><strong>{pendingRows.length}</strong><small><Eye size={14}/> View details</small>
+      </button>
+    </div>
 
     <section className="panel target-panel"><div className="panel-head"><div><h2>Sales Target & Closure</h2><p className="muted">Current month: {now.toLocaleString('en-US',{month:'long'})} {CURRENT_YEAR}</p></div>{(profile.role!=='admin'||selectedUserId)&&<button className="secondary" onClick={()=>setShowTarget(true)}><Target size={16}/> Set Target</button>}</div>
       <div className="target-cards"><div><span>Monthly Target</span><strong>{pkr(target.monthly_target)}</strong></div><div><span>Monthly Achieved</span><strong>{pkr(monthlyAchieved)}</strong></div><div><span>Monthly Remaining</span><strong>{pkr(monthlyRemaining)}</strong></div><div><span>Achievement</span><strong>{monthlyPercent.toFixed(1)}%</strong></div><div><span>Yearly Target</span><strong>{pkr(target.yearly_target)}</strong></div><div><span>Yearly Achieved</span><strong>{pkr(yearlyAchieved)}</strong></div><div><span>Closure from DO</span><strong>{pkr(closureValue)}</strong><small>{closureRows.length} delivered</small></div></div>
@@ -105,6 +193,57 @@ export default function Dashboard() {
 
     <div className="dashboard-grid"><section className="panel"><h2>Probability Summary</h2>{[[67,100,'67–100%'],[34,66,'34–66%'],[0,33,'0–33%']].map(([min,max,label])=>{const value=band(min,max),total=Math.max(sum('sales_value_ex_gst'),1);return <div className="bar-row" key={label}><strong>{label}</strong><div className="bar-track"><div className="bar-fill" style={{width:`${value/total*100}%`}}/></div><span>{pkr(value)}</span></div>})}</section><section className="panel"><h2>Quotation Status</h2>{statuses.map(status=><div className="status-row" key={status}><span>{status}</span><strong>{rows.filter(r=>r.quotation_status===status).length}</strong></div>)}</section></div>
     <section className="panel"><div className="panel-head"><h2>Recent Opportunities</h2><Link to="/pipeline">View complete pipeline</Link></div><div className="table-wrap"><table><thead><tr><th>Salesperson</th><th>Customer</th><th>Date</th><th>Item</th><th>Sales</th><th>GP</th><th>Probability</th><th>Status</th></tr></thead><tbody>{loading?<tr><td colSpan="8">Loading...</td></tr>:rows.slice(0,8).map(r=><tr key={r.id}><td>{r.profiles?.full_name}</td><td>{r.customer_name}</td><td>{r.quotation_date}</td><td>{r.item}</td><td>{pkr(r.sales_value_ex_gst)}</td><td>{pkr(r.gp)}</td><td>{r.probability}%</td><td>{r.quotation_status}</td></tr>)}</tbody></table></div></section>
+
+
+    {activeDetail&&<div className="dashboard-drawer-layer" onMouseDown={e=>{if(e.target===e.currentTarget)closeDetails()}}>
+      <aside className="dashboard-detail-drawer">
+        <div className="drawer-head">
+          <div>
+            <span className="drawer-kicker">DASHBOARD BREAKDOWN</span>
+            <h2>{activeDetail.title}</h2>
+            <p>{activeDetail.subtitle}</p>
+          </div>
+          <button className="drawer-close" type="button" onClick={closeDetails} aria-label="Close details"><X size={22}/></button>
+        </div>
+
+        <div className="drawer-summary">
+          <div><span>Total Records</span><strong>{visibleDetailRows.length}</strong></div>
+          <div><span>{detailType==='pending'?'Pending Count':detailType==='gp'?'Total Gross Profit':'Total Value'}</span><strong>{detailType==='pending'?visibleDetailRows.length:pkr(visibleDetailRows.reduce((a,r)=>a+Number(detailType==='gp'?r.gp:r.sales_value_ex_gst||0),0))}</strong></div>
+          <div><span>Highest Opportunity</span><strong>{pkr(Math.max(0,...visibleDetailRows.map(r=>Number(r.sales_value_ex_gst||0))))}</strong></div>
+        </div>
+
+        <label className="drawer-search">
+          <Search size={17}/>
+          <input value={detailSearch} onChange={e=>setDetailSearch(e.target.value)} placeholder="Search customer, item, salesperson or status..."/>
+        </label>
+
+        <div className="drawer-table-wrap">
+          <table className="drawer-table">
+            <thead><tr><th>#</th><th>Salesperson</th><th>Customer</th><th>Date</th><th>Item</th><th>Sales Value</th><th>GP</th><th>Probability</th><th>Status</th></tr></thead>
+            <tbody>
+              {visibleDetailRows.length===0
+                ? <tr><td colSpan="9" className="drawer-empty">No matching records available.</td></tr>
+                : visibleDetailRows.map((r,i)=><tr key={r.id}>
+                    <td>{i+1}</td>
+                    <td>{r.profiles?.full_name||'-'}</td>
+                    <td>{r.customer_name||'-'}</td>
+                    <td>{r.quotation_date||'-'}</td>
+                    <td className="drawer-item-cell">{r.item||'-'}</td>
+                    <td>{pkr(r.sales_value_ex_gst)}</td>
+                    <td>{pkr(r.gp)}</td>
+                    <td><span className="drawer-probability">{r.probability}%</span></td>
+                    <td><span className="drawer-status">{r.quotation_status||'-'}</span></td>
+                  </tr>)}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="drawer-footer">
+          <span>Showing {visibleDetailRows.length} record{visibleDetailRows.length===1?'':'s'}</span>
+          <button className="secondary" type="button" onClick={closeDetails}>Close</button>
+        </div>
+      </aside>
+    </div>}
 
     {showTarget&&<div className="modal"><form className="modal-card target-modal" onSubmit={saveTarget}><div className="modal-head"><h2>Set Sales Target</h2><button type="button" onClick={()=>setShowTarget(false)}>×</button></div><p className="note">Target for {now.toLocaleString('en-US',{month:'long'})} {CURRENT_YEAR}.</p><div className="form-grid"><label>Monthly Target (PKR)<input type="number" min="0" step="0.01" value={target.monthly_target} onChange={e=>setTarget({...target,monthly_target:e.target.value})}/></label><label>Yearly Target (PKR)<input type="number" min="0" step="0.01" value={target.yearly_target} onChange={e=>setTarget({...target,yearly_target:e.target.value})}/></label></div><div className="form-actions"><button type="button" className="secondary" onClick={()=>setShowTarget(false)}>Cancel</button><button className="primary">Save Target</button></div></form></div>}
   </div>
