@@ -19,7 +19,14 @@ export default function Login(){
   return <div className='login-page'>
     <div className='login-shell'>
       <div className='login-brand-panel'>
-        <div className='login-brand-mark'>T</div>
+<div className="login-brand-mark">
+  <img
+    src="/telec-logo.png"
+    alt="TELEC"
+    className="telec-login-logo"
+  />
+</div>
+        
         <div>
           <span className='login-eyebrow'>TELEC GROUP</span>
           <h2>Smart Sales Manager</h2>
