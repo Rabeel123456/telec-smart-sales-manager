@@ -39,3 +39,236 @@
 /* Document action buttons */
 .document-actions{display:flex;align-items:center;gap:3px;white-space:nowrap}
 .whatsapp-action{color:#168a5b!important}
+
+
+/* =========================================================
+   PROFESSIONAL UI REFRESH + DEVELOPER CREDIT
+   ========================================================= */
+:root{
+  --telec-navy:#102a43;
+  --telec-navy-2:#173a5e;
+  --telec-green:#12956f;
+  --telec-green-dark:#0e7658;
+  --telec-bg:#f3f6f9;
+  --telec-border:#dce5ec;
+  --telec-text:#14283d;
+  --telec-muted:#6e7f90;
+  --telec-shadow:0 10px 28px rgba(15,42,67,.07);
+}
+body{background:var(--telec-bg);color:var(--telec-text)}
+button,input,select,textarea{font-family:inherit}
+
+/* Login */
+.login-page{
+  padding:28px;
+  background:
+    radial-gradient(circle at 12% 18%,rgba(18,149,111,.22),transparent 28%),
+    radial-gradient(circle at 90% 82%,rgba(65,115,170,.25),transparent 28%),
+    linear-gradient(135deg,#0c2137 0%,#153b59 52%,#0d6f5a 100%);
+}
+.login-shell{
+  width:min(960px,96vw);
+  min-height:590px;
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  background:#fff;
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:0 30px 90px rgba(0,0,0,.28);
+}
+.login-brand-panel{
+  position:relative;
+  padding:58px 52px;
+  color:#fff;
+  background:
+    linear-gradient(150deg,rgba(10,38,62,.96),rgba(16,88,82,.94)),
+    linear-gradient(135deg,#102a43,#12956f);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.login-brand-panel:after{
+  content:"";
+  position:absolute;
+  width:260px;height:260px;
+  right:-100px;bottom:-100px;
+  border:1px solid rgba(255,255,255,.17);
+  border-radius:50%;
+  box-shadow:0 0 0 38px rgba(255,255,255,.04),0 0 0 78px rgba(255,255,255,.03);
+}
+.login-brand-mark{
+  width:68px;height:68px;
+  border-radius:18px;
+  display:grid;place-items:center;
+  background:#17a77d;
+  box-shadow:0 12px 28px rgba(0,0,0,.18);
+  font-size:34px;font-weight:800;
+  margin-bottom:30px;
+}
+.login-eyebrow{font-size:12px;font-weight:800;letter-spacing:2px;color:#8de0c6}
+.login-brand-panel h2{font-size:36px;line-height:1.12;margin:10px 0 16px}
+.login-brand-panel p{font-size:15px;line-height:1.8;color:#d7e5ee;max-width:430px}
+.login-brand-footer{
+  position:absolute;left:52px;bottom:34px;
+  font-size:12px;color:#c3d6e2;letter-spacing:.2px;
+}
+.login-brand-footer strong{color:#fff}
+.login-card{
+  width:auto;
+  border-radius:0;
+  box-shadow:none;
+  padding:64px 58px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.login-card-kicker{margin-top:20px;font-size:11px;letter-spacing:1.7px;color:var(--telec-green);font-weight:800}
+.login-card h1{font-size:29px;color:var(--telec-text);margin:8px 0 8px}
+.login-card p{font-size:14px;line-height:1.6;margin:0 0 15px}
+.login-card label{font-size:12px;color:#40556a;margin:14px 0 3px}
+.login-card input{padding:13px 14px;border-radius:10px;border:1px solid #cdd9e2;transition:.2s}
+.login-card input:focus{outline:none;border-color:var(--telec-green);box-shadow:0 0 0 3px rgba(18,149,111,.12)}
+.login-card .primary{
+  margin-top:22px;
+  padding:13px 16px;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--telec-green),var(--telec-green-dark));
+  box-shadow:0 8px 18px rgba(18,149,111,.23);
+}
+.login-mobile-credit{display:none;text-align:center;margin-top:22px;font-size:11px;color:#7a8996}
+
+/* Application shell */
+.sidebar{
+  width:260px;
+  padding:24px 16px 18px;
+  background:linear-gradient(180deg,#102b46 0%,#10263d 100%);
+  border-right:1px solid rgba(255,255,255,.05);
+  box-shadow:8px 0 28px rgba(16,42,67,.07);
+}
+.brand{padding:0 10px 28px}
+.brand-logo{width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,#16a47b,#0d8a66);box-shadow:0 10px 22px rgba(0,0,0,.18)}
+.brand strong{font-size:20px;letter-spacing:.3px}
+.brand span{margin-top:4px;font-size:11px;letter-spacing:.2px}
+.sidebar nav{overflow-y:auto;padding-right:3px}
+.sidebar nav a{
+  min-height:46px;
+  padding:12px 14px;
+  margin:4px 0;
+  border:1px solid transparent;
+  border-radius:10px;
+  transition:.18s ease;
+}
+.sidebar nav a:hover{background:rgba(255,255,255,.08);transform:translateX(2px)}
+.sidebar nav a.active{
+  background:linear-gradient(90deg,rgba(65,115,170,.34),rgba(255,255,255,.09));
+  border-color:rgba(255,255,255,.07);
+  box-shadow:inset 3px 0 0 #2cc99a;
+}
+.sidebar-footer{padding:14px 10px 3px;border-top:1px solid rgba(255,255,255,.1)}
+.sidebar-user-label{font-size:13px;font-weight:700}
+.sidebar-role{font-size:10px;color:#9fb3c6;margin:3px 0 10px}
+.sidebar-footer button{width:100%;justify-content:center;margin:7px 0 10px;cursor:pointer}
+.sidebar-footer small{margin:0 0 11px;text-align:center}
+.sidebar-developer{
+  padding-top:10px;
+  border-top:1px solid rgba(255,255,255,.08);
+  color:#91a8ba;
+  font-size:9px;
+  line-height:1.55;
+  text-align:center;
+}
+.sidebar-developer strong{color:#dce8f0;font-size:10px}
+
+.main{
+  margin-left:260px;
+  width:calc(100% - 260px);
+  padding:34px 38px 18px;
+  background:
+    linear-gradient(rgba(244,247,249,.92),rgba(244,247,249,.92)),
+    radial-gradient(circle at 100% 0,rgba(18,149,111,.08),transparent 34%);
+}
+.main-content{width:100%;max-width:1580px;margin:0 auto}
+.app-footer{
+  max-width:1580px;
+  margin:28px auto 0;
+  padding:16px 0 2px;
+  border-top:1px solid #dce4ea;
+  color:#7c8b98;
+  text-align:center;
+  font-size:11px;
+}
+.app-footer span{padding:0 6px;color:#b0bac3}
+.app-footer strong{color:#40556a}
+
+/* Dashboard and general visual polish */
+.topbar{margin-bottom:26px;gap:24px}
+.topbar h1{font-size:34px;letter-spacing:-.8px;color:#122b45}
+.topbar p{font-size:14px;color:#738496}
+.actions{gap:10px}
+.primary,.secondary{
+  min-height:44px;
+  padding:11px 16px;
+  border-radius:10px;
+  transition:.18s ease;
+}
+.primary:hover{background:#0f8060;transform:translateY(-1px);box-shadow:0 7px 15px rgba(18,149,111,.18)}
+.secondary:hover{border-color:#b8c8d3;background:#f8fafb;transform:translateY(-1px)}
+.cards{gap:18px;margin-bottom:20px}
+.card,.panel{
+  border:1px solid var(--telec-border);
+  border-radius:15px;
+  box-shadow:var(--telec-shadow);
+}
+.card{
+  position:relative;
+  min-height:132px;
+  padding:24px 25px;
+  overflow:hidden;
+}
+.card:after{
+  content:"";
+  position:absolute;
+  width:72px;height:72px;
+  border-radius:50%;
+  right:-24px;top:-24px;
+  background:rgba(18,149,111,.08);
+}
+.card span{font-size:12px;letter-spacing:.15px}
+.card strong{font-size:25px;letter-spacing:-.4px;color:#112d49}
+.panel{padding:24px}
+.target-panel{border-left:4px solid var(--telec-green)}
+.target-cards{gap:13px}
+.target-cards>div{
+  background:linear-gradient(145deg,#f7faf9,#eef5f2);
+  padding:16px;
+  border-radius:11px;
+}
+.scope select,.filters input,.filters select,.form-grid input,.form-grid select,.form-grid textarea{
+  min-height:42px;
+  border-radius:9px;
+}
+table{font-size:12px}
+th{padding:12px;background:#eaf0f4;color:#34495e;font-size:11px;letter-spacing:.25px}
+td{padding:12px}
+tbody tr:hover{background:#f8fbfc}
+.document-actions .icon,.icon{
+  width:32px;height:32px;
+  display:inline-grid;place-items:center;
+  border-radius:7px;
+  background:#f2f7f5;
+  transition:.18s;
+}
+.document-actions .icon:hover,.icon:hover{background:#e4f2ed;transform:translateY(-1px)}
+.icon.danger{background:#fff1f1}
+
+/* responsive */
+@media(max-width:1000px){
+  .login-shell{grid-template-columns:1fr;width:min(520px,96vw)}
+  .login-brand-panel{display:none}
+  .login-card{padding:44px 34px}
+  .login-mobile-credit{display:block}
+}
+@media(max-width:900px){
+  .sidebar{width:210px}
+  .main{margin-left:210px;width:calc(100% - 210px);padding:25px 20px}
+}
