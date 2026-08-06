@@ -1,0 +1,163 @@
+
+/* Clickable dashboard cards and detail drawer */
+.dashboard-clickable-cards .dashboard-stat-card{
+  appearance:none;
+  width:100%;
+  text-align:left;
+  font-family:inherit;
+  color:inherit;
+  cursor:pointer;
+  border:1px solid var(--telec-border,#dce5ec);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.dashboard-clickable-cards .dashboard-stat-card:hover{
+  transform:translateY(-4px);
+  border-color:#31b58d;
+  box-shadow:0 16px 34px rgba(16,42,67,.12);
+}
+.dashboard-clickable-cards .dashboard-stat-card:focus-visible{
+  outline:3px solid rgba(18,149,111,.2);
+  outline-offset:2px;
+}
+.dashboard-stat-card small{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:17px;
+  color:#138761;
+  font-size:11px;
+  font-weight:700;
+}
+.dashboard-drawer-layer{
+  position:fixed;
+  inset:0;
+  z-index:120;
+  display:flex;
+  justify-content:flex-end;
+  background:rgba(8,27,43,.38);
+  backdrop-filter:blur(2px);
+  animation:drawerFade .18s ease;
+}
+.dashboard-detail-drawer{
+  width:min(1040px,78vw);
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  background:#f7f9fb;
+  box-shadow:-20px 0 55px rgba(7,30,48,.2);
+  animation:drawerSlide .24s ease;
+}
+.drawer-head{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  padding:28px 30px 22px;
+  background:linear-gradient(135deg,#102a43,#154d5b);
+  color:#fff;
+}
+.drawer-kicker{
+  display:block;
+  margin-bottom:7px;
+  color:#82d7bd;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.5px;
+}
+.drawer-head h2{margin:0;font-size:25px}
+.drawer-head p{margin:8px 0 0;color:#d1e1e9;font-size:13px}
+.drawer-close{
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  flex:0 0 40px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:10px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  cursor:pointer;
+}
+.drawer-summary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  padding:20px 24px 0;
+}
+.drawer-summary>div{
+  padding:15px 17px;
+  border:1px solid #dce5eb;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 5px 16px rgba(16,42,67,.05);
+}
+.drawer-summary span{display:block;color:#718292;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.drawer-summary strong{display:block;margin-top:7px;color:#12304d;font-size:18px}
+.drawer-search{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:18px 24px 14px;
+  padding:0 13px;
+  border:1px solid #ccd9e2;
+  border-radius:10px;
+  background:#fff;
+  color:#718292;
+}
+.drawer-search input{
+  width:100%;
+  min-height:44px;
+  border:0;
+  outline:0;
+  background:transparent;
+  font:inherit;
+}
+.drawer-table-wrap{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  margin:0 24px;
+  border:1px solid #dbe4ea;
+  border-radius:12px;
+  background:#fff;
+}
+.drawer-table{min-width:1080px}
+.drawer-table th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#eaf1f5;
+}
+.drawer-table td{vertical-align:middle}
+.drawer-item-cell{max-width:250px;overflow:hidden;text-overflow:ellipsis}
+.drawer-probability,.drawer-status{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#e7f4ef;
+  color:#107557;
+  font-size:10px;
+  font-weight:800;
+}
+.drawer-status{background:#eef3f7;color:#425a70}
+.drawer-empty{text-align:center;padding:42px!important;color:#778896}
+.drawer-footer{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:17px 24px;
+  border-top:1px solid #dce4ea;
+  background:#fff;
+  color:#728393;
+  font-size:12px;
+}
+@keyframes drawerFade{from{opacity:0}to{opacity:1}}
+@keyframes drawerSlide{from{transform:translateX(45px);opacity:.7}to{transform:translateX(0);opacity:1}}
+@media(max-width:1100px){
+  .dashboard-detail-drawer{width:92vw}
+}
+@media(max-width:720px){
+  .dashboard-detail-drawer{width:100vw}
+  .drawer-summary{grid-template-columns:1fr}
+  .drawer-head{padding:22px 20px}
+  .drawer-summary,.drawer-search{margin-left:16px;margin-right:16px}
+  .drawer-summary{padding-left:0;padding-right:0}
+  .drawer-table-wrap{margin-left:16px;margin-right:16px}
+}
