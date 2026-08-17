@@ -19,7 +19,7 @@ export function SalesProvider({ profile, children }) {
     quotation_intro_text:'In response to your request, we are pleased to submit our quotation as below.'
   })
   const [loading, setLoading] = useState(true)
-  const lastErrorRef = useRef('')
+  const errorShown = useRef('')
 
   const calc = record => {
     const sales = Number(record.sales_value_ex_gst || 0)
@@ -39,36 +39,60 @@ export function SalesProvider({ profile, children }) {
     if (!profile?.id) return
     if (!silent) setLoading(true)
 
+    // IMPORTANT:
+    // Load sales independently. A missing/duplicate app_settings row or a
+    // temporary profiles error must NEVER erase sales records from the UI.
     try {
-      const [salesResult, peopleResult, settingsResult] = await Promise.all([
-        supabase.from('sales_records').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('id,full_name,role,active').order('full_name'),
-        supabase.from('app_settings').select('*').eq('id', 1).maybeSingle()
-      ])
+      const { data: salesRows, error: salesError } = await supabase
+        .from('sales_records')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-      if (salesResult.error) throw new Error(`Sales data could not be loaded: ${salesResult.error.message}`)
-      if (peopleResult.error) throw new Error(`User data could not be loaded: ${peopleResult.error.message}`)
+      if (salesError) throw salesError
 
-      const people = peopleResult.data || []
-      const profileMap = Object.fromEntries(people.map(person => [person.id, person]))
+      const { data: people, error: peopleError } = await supabase
+        .from('profiles')
+        .select('id,full_name,role,active')
+        .order('full_name')
 
-      // IMPORTANT: never clear existing records because of a transient reload error.
-      // Only replace the state after a successful database read.
-      const nextRecords = (salesResult.data || []).map(row => ({
+      const profileMap = Object.fromEntries((people || []).map(person => [person.id, person]))
+
+      // Only replace records after a successful sales_records query.
+      // Never use setRecords([]) for a secondary query failure.
+      setRecords((salesRows || []).map(row => ({
         ...row,
         profiles: profileMap[row.user_id] || { full_name: 'Unknown' }
-      }))
-      setRecords(nextRecords)
+      })))
 
-      if (settingsResult.data) setSettings(settingsResult.data)
-      setUsers(profile.role === 'admin' ? people : people.filter(person => person.id === profile.id))
-      lastErrorRef.current = ''
+      if (!peopleError) {
+        setUsers(
+          profile.role === 'admin'
+            ? (people || [])
+            : (people || []).filter(person => person.id === profile.id)
+        )
+      }
+
+      // Settings are optional for loading sales. maybeSingle() avoids the
+      // "JSON object requested, multiple/no rows returned" error from .single().
+      const { data: settingRow, error: settingsError } = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle()
+
+      if (!settingsError && settingRow) {
+        setSettings(settingRow)
+      }
+
+      errorShown.current = ''
     } catch (error) {
-      console.error('SalesContext load failed:', error)
-      // Do NOT do setRecords([]) here. Existing data must remain visible.
-      if (lastErrorRef.current !== error.message) {
-        lastErrorRef.current = error.message
-        if (!silent) alert(error.message || 'Data could not be loaded.')
+      console.error('SalesContext load error:', error)
+
+      // CRITICAL: do not clear records here.
+      // If Supabase temporarily fails, the last known records stay visible.
+      if (!silent && errorShown.current !== error.message) {
+        errorShown.current = error.message
+        alert(error.message || 'Sales data could not be loaded.')
       }
     } finally {
       setLoading(false)
@@ -80,9 +104,16 @@ export function SalesProvider({ profile, children }) {
 
     load()
 
-    // Keep multiple browser tabs/windows in sync when a sales record changes.
+    // When returning to this tab/window, refresh from Supabase.
+    // This does not clear the current state if the refresh fails.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') load({ silent: true })
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    // Keep multiple browser tabs/windows synchronized.
     const channel = supabase
-      .channel(`sales-records-${profile.id}`)
+      .channel(`telec-sales-${profile.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'sales_records' },
@@ -90,13 +121,8 @@ export function SalesProvider({ profile, children }) {
       )
       .subscribe()
 
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') load({ silent: true })
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-
     return () => {
-      document.removeEventListener('visibilitychange', onVisibility)
+      document.removeEventListener('visibilitychange', handleVisibility)
       supabase.removeChannel(channel)
     }
   }, [profile?.id])
@@ -118,30 +144,45 @@ export function SalesProvider({ profile, children }) {
 
     if (!payload.user_id) throw new Error('Please select a salesperson.')
 
-    const query = editingId
-      ? supabase.from('sales_records').update(payload).eq('id', editingId).select('*').single()
-      : supabase.from('sales_records').insert(payload).select('*').single()
+    let result
+    if (editingId) {
+      result = await supabase
+        .from('sales_records')
+        .update(payload)
+        .eq('id', editingId)
+        .select('*')
+        .single()
+    } else {
+      result = await supabase
+        .from('sales_records')
+        .insert(payload)
+        .select('*')
+        .single()
+    }
 
-    const { data, error } = await query
-    if (error) throw error
-    if (!data?.id) throw new Error('The record was not confirmed by the database.')
+    if (result.error) throw result.error
+    if (!result.data?.id) throw new Error('The database did not confirm the saved record.')
 
-    // Confirm it is actually readable after the write before navigating away.
-    const { data: confirmed, error: verifyError } = await supabase
+    // Verify the record is readable immediately after saving.
+    const { data: verified, error: verifyError } = await supabase
       .from('sales_records')
       .select('id')
-      .eq('id', data.id)
+      .eq('id', result.data.id)
       .maybeSingle()
 
-    if (verifyError) throw new Error(`Record saved but could not be verified: ${verifyError.message}`)
-    if (!confirmed) throw new Error('Record was not readable after saving. Please check Supabase RLS policies.')
+    if (verifyError) throw new Error(`Saved, but verification failed: ${verifyError.message}`)
+    if (!verified) throw new Error('Saved, but the record is not readable under the current Supabase RLS policy.')
 
     await load({ silent: true })
-    return data
+    return result.data
   }
 
   async function deleteRecord(id) {
-    const { error } = await supabase.from('sales_records').delete().eq('id', id)
+    const { error } = await supabase
+      .from('sales_records')
+      .delete()
+      .eq('id', id)
+
     if (error) throw error
     await load({ silent: true })
   }
